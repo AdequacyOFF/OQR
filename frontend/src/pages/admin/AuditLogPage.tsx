@@ -18,7 +18,7 @@ const AuditLogPage: React.FC = () => {
   const loadEntries = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get<AuditLogEntry[]>('/admin/audit-log');
+      const { data } = await api.get<AuditLogEntry[]>('admin/audit-log');
       setEntries(data);
     } catch {
       setError('Failed to load audit log.');

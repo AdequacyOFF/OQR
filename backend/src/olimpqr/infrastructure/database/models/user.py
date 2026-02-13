@@ -39,7 +39,13 @@ class UserModel(Base):
         nullable=False
     )
     role: Mapped[UserRole] = mapped_column(
-        SQLEnum(UserRole, name="user_role", native_enum=False),
+        SQLEnum(
+            UserRole,
+            name="userrole",
+            native_enum=True,
+            create_type=False,
+            values_callable=lambda e: [member.value for member in e],
+        ),
         nullable=False,
         index=True
     )

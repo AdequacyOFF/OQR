@@ -19,7 +19,7 @@ const ScanDetailPage: React.FC = () => {
   useEffect(() => {
     const loadScan = async () => {
       try {
-        const { data } = await api.get<ScanItem>(`/scans/${id}`);
+        const { data } = await api.get<ScanItem>(`scans/${id}`);
         setScan(data);
         if (data.ocr_score !== null) {
           setCorrectedScore(String(data.ocr_score));
@@ -41,7 +41,7 @@ const ScanDetailPage: React.FC = () => {
     setSuccess(null);
 
     try {
-      const { data } = await api.post<ScanItem>(`/scans/${scan.id}/verify`, {
+      const { data } = await api.post<ScanItem>(`scans/${scan.id}/verify`, {
         verified_score: Number(correctedScore),
       });
       setScan(data);

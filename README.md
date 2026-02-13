@@ -251,19 +251,34 @@ Admin → Проверка всех результатов
 ## Тестирование
 
 ```bash
-# Backend unit tests
 cd backend
+
+# Все тесты (124 теста)
+poetry run pytest
+
+# Unit tests (54 теста)
 poetry run pytest tests/unit -v
 
-# Backend integration tests
+# Integration tests (40 тестов)
 poetry run pytest tests/integration -v
 
-# Backend E2E tests
+# E2E tests (30 тестов — полный workflow + OCR pipeline)
 poetry run pytest tests/e2e -v
 
-# Frontend tests
+# С покрытием
+poetry run pytest --cov=olimpqr --cov-report=html
+```
+
+### Frontend
+
+```bash
 cd frontend
-npm run test
+
+# Проверка TypeScript
+npx tsc --noEmit
+
+# Линтинг
+npm run lint
 ```
 
 ## Production Deployment
@@ -321,21 +336,26 @@ docker-compose exec postgres psql -U olimpqr_user -d olimpqr -c "SELECT * FROM p
    - entry_token.used_at проверяется перед допуском
    - После использования невозможно повторно войти
 
-4. **Audit Log**
+4. **Rate Limiting** (slowapi)
+   - Registration: 3 запроса/мин на IP
+   - Login: 5 запросов/мин на IP
+   - Общий лимит: 100 запросов/мин
+
+5. **Audit Log**
    - Все критические действия логируются
    - entity_type, entity_id, action, user_id, IP, timestamp
-   - JSONB details для дополнительного контекста
+   - JSON details для дополнительного контекста
 
 ### Security Checklist
 
-- [ ] SECRET_KEY и HMAC_SECRET_KEY >= 32 символов
+- [x] SECRET_KEY и HMAC_SECRET_KEY >= 32 символов
 - [ ] HTTPS enabled (production)
-- [ ] CORS configured с правильными origins
-- [ ] Rate limiting active (slowapi)
-- [ ] SQL injection prevention (SQLAlchemy параметризованные запросы)
-- [ ] XSS prevention (React auto-escaping)
-- [ ] JWT с разумным expire time
-- [ ] Пароли хэшированы с bcrypt
+- [x] CORS configured с правильными origins
+- [x] Rate limiting active (slowapi)
+- [x] SQL injection prevention (SQLAlchemy параметризованные запросы)
+- [x] XSS prevention (React auto-escaping)
+- [x] JWT с разумным expire time
+- [x] Пароли хэшированы с bcrypt
 
 ## Troubleshooting
 

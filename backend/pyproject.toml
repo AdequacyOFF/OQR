@@ -3,7 +3,6 @@ name = "olimpqr"
 version = "0.1.0"
 description = "Olympic Competition Management System with Anonymous QR Codes"
 authors = ["StolovAR <andrey_stolov@mail.ru>"]
-readme = "README.md"
 packages = [{include = "olimpqr", from = "src"}]
 
 [tool.poetry.dependencies]
@@ -21,7 +20,7 @@ alembic = "^1.13.0"
 
 # Security
 python-jose = {extras = ["cryptography"], version = "^3.3.0"}
-passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+bcrypt = "^4.0.0"
 pyjwt = "^2.9.0"
 cryptography = "^44.0.0"
 
@@ -65,9 +64,6 @@ aiosqlite = "^0.20.0"
 # Linting & Formatting
 ruff = "^0.7.0"
 mypy = "^1.13.0"
-
-# Type stubs
-types-passlib = "^1.7.7"
 
 
 [build-system]

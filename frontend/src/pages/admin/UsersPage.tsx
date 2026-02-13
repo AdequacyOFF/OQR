@@ -43,7 +43,7 @@ const UsersPage: React.FC = () => {
   const loadUsers = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get<UserInfo[]>('/admin/users');
+      const { data } = await api.get<UserInfo[]>('admin/users');
       setUsers(data);
     } catch {
       setError('Failed to load users.');
@@ -56,7 +56,7 @@ const UsersPage: React.FC = () => {
     setCreating(true);
     setError(null);
     try {
-      await api.post('/admin/users', data);
+      await api.post('admin/users', data);
       setModalOpen(false);
       reset();
       await loadUsers();
@@ -72,7 +72,7 @@ const UsersPage: React.FC = () => {
 
   const handleToggleActive = async (user: UserInfo) => {
     try {
-      await api.put(`/admin/users/${user.id}`, {
+      await api.put(`admin/users/${user.id}`, {
         is_active: !user.is_active,
       });
       await loadUsers();

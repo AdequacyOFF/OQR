@@ -15,7 +15,7 @@ const EntryQRPage: React.FC = () => {
   useEffect(() => {
     const loadRegistration = async () => {
       try {
-        const { data } = await api.get<Registration>(`/registrations/${id}`);
+        const { data } = await api.get<Registration>(`registrations/${id}`);
         setRegistration(data);
       } catch {
         setError('Failed to load registration.');

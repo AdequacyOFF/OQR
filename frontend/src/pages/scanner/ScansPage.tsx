@@ -21,7 +21,7 @@ const ScansPage: React.FC = () => {
   const loadScans = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get<ScanItem[]>('/scans');
+      const { data } = await api.get<ScanItem[]>('scans');
       setScans(data);
     } catch {
       setError('Failed to load scans.');
@@ -41,7 +41,7 @@ const ScansPage: React.FC = () => {
     formData.append('file', file);
 
     try {
-      await api.post('/scans/upload', formData, {
+      await api.post('scans/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       await loadScans();

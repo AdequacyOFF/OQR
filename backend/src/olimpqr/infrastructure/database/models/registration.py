@@ -44,7 +44,13 @@ class RegistrationModel(Base):
         index=True
     )
     status: Mapped[RegistrationStatus] = mapped_column(
-        SQLEnum(RegistrationStatus, name="registration_status", native_enum=False),
+        SQLEnum(
+            RegistrationStatus,
+            name="registrationstatus",
+            native_enum=True,
+            create_type=False,
+            values_callable=lambda e: [member.value for member in e],
+        ),
         nullable=False,
         default=RegistrationStatus.PENDING,
         index=True

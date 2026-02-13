@@ -46,7 +46,13 @@ class AttemptModel(Base):
         index=True
     )
     status: Mapped[AttemptStatus] = mapped_column(
-        SQLEnum(AttemptStatus, name="attempt_status", native_enum=False),
+        SQLEnum(
+            AttemptStatus,
+            name="attemptstatus",
+            native_enum=True,
+            create_type=False,
+            values_callable=lambda e: [member.value for member in e],
+        ),
         nullable=False,
         default=AttemptStatus.PRINTED,
         index=True

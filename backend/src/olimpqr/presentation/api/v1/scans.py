@@ -87,7 +87,7 @@ async def upload_scan(
     return ScanUploadResponse(scan_id=scan_id, task_id=task.id)
 
 
-@router.get("/", response_model=ScanListResponse)
+@router.get("", response_model=ScanListResponse)
 async def list_scans(
     skip: int = 0,
     limit: int = 50,

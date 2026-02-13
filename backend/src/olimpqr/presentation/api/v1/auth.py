@@ -1,7 +1,7 @@
 """Authentication API endpoints."""
 
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ....infrastructure.security.rate_limiter import limiter
@@ -21,6 +21,7 @@ router = APIRouter()
 @limiter.limit("3/minute")
 async def register(
     request: Request,
+    response: Response,
     body: RegisterRequest,
     db: Annotated[AsyncSession, Depends(get_db)]
 ):
@@ -77,6 +78,7 @@ async def register(
 @limiter.limit("5/minute")
 async def login(
     request: Request,
+    response: Response,
     body: LoginRequest,
     db: Annotated[AsyncSession, Depends(get_db)]
 ):

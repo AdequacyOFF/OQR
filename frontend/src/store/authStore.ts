@@ -25,28 +25,22 @@ const useAuthStore = create<AuthState>((set) => ({
   isAuthenticated: false,
 
   login: async (email: string, password: string) => {
-    const params = new URLSearchParams();
-    params.append('username', email);
-    params.append('password', password);
-
-    const { data } = await api.post<AuthResponse>('/auth/login', params, {
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    });
+    const { data } = await api.post<AuthResponse>('auth/login', { email, password });
 
     localStorage.setItem('access_token', data.access_token);
     set({ token: data.access_token });
 
-    const { data: user } = await api.get<UserInfo>('/auth/me');
+    const { data: user } = await api.get<UserInfo>('auth/me');
     set({ user, isAuthenticated: true });
   },
 
   register: async (data) => {
-    const { data: authData } = await api.post<AuthResponse>('/auth/register', data);
+    const { data: authData } = await api.post<AuthResponse>('auth/register', data);
 
     localStorage.setItem('access_token', authData.access_token);
     set({ token: authData.access_token });
 
-    const { data: user } = await api.get<UserInfo>('/auth/me');
+    const { data: user } = await api.get<UserInfo>('auth/me');
     set({ user, isAuthenticated: true });
   },
 
@@ -61,7 +55,7 @@ const useAuthStore = create<AuthState>((set) => ({
 
     set({ token });
     try {
-      const { data: user } = await api.get<UserInfo>('/auth/me');
+      const { data: user } = await api.get<UserInfo>('auth/me');
       set({ user, isAuthenticated: true });
     } catch {
       localStorage.removeItem('access_token');

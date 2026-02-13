@@ -13,7 +13,7 @@ const ResultsPage: React.FC = () => {
   useEffect(() => {
     const loadResults = async () => {
       try {
-        const { data } = await api.get<ResultEntry[]>(`/results/${competitionId}`);
+        const { data } = await api.get<ResultEntry[]>(`results/${competitionId}`);
         setResults(data);
       } catch {
         setError('Failed to load results.');

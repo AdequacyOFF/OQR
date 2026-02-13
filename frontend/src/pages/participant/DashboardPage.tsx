@@ -22,8 +22,8 @@ const DashboardPage: React.FC = () => {
     setLoading(true);
     try {
       const [compRes, regRes] = await Promise.all([
-        api.get<Competition[]>('/competitions'),
-        api.get<Registration[]>('/registrations'),
+        api.get<Competition[]>('competitions'),
+        api.get<Registration[]>('registrations'),
       ]);
       setCompetitions(compRes.data);
       setRegistrations(regRes.data);
@@ -37,7 +37,7 @@ const DashboardPage: React.FC = () => {
   const handleRegister = async (competitionId: string) => {
     setRegisteringId(competitionId);
     try {
-      const { data } = await api.post<Registration>('/registrations', {
+      const { data } = await api.post<Registration>('registrations', {
         competition_id: competitionId,
       });
       setRegistrations((prev) => [...prev, data]);

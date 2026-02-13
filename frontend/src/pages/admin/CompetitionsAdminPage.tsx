@@ -46,7 +46,7 @@ const CompetitionsAdminPage: React.FC = () => {
   const loadCompetitions = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get<Competition[]>('/competitions');
+      const { data } = await api.get<Competition[]>('competitions');
       setCompetitions(data);
     } catch {
       setError('Failed to load competitions.');
@@ -84,9 +84,9 @@ const CompetitionsAdminPage: React.FC = () => {
     setError(null);
     try {
       if (editingId) {
-        await api.put(`/competitions/${editingId}`, data);
+        await api.put(`competitions/${editingId}`, data);
       } else {
-        await api.post('/competitions', data);
+        await api.post('competitions', data);
       }
       setModalOpen(false);
       reset();
@@ -104,7 +104,7 @@ const CompetitionsAdminPage: React.FC = () => {
 
   const handleStatusChange = async (id: string, status: string) => {
     try {
-      await api.put(`/competitions/${id}`, { status });
+      await api.put(`competitions/${id}`, { status });
       await loadCompetitions();
     } catch {
       setError('Failed to update status.');

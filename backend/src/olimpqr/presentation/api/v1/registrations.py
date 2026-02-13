@@ -29,7 +29,7 @@ from ....config import settings
 router = APIRouter()
 
 
-@router.post("/", response_model=RegistrationResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=RegistrationResponse, status_code=status.HTTP_201_CREATED)
 async def register_for_competition(
     request: RegisterForCompetitionRequest,
     current_user: Annotated[User, Depends(require_role(UserRole.PARTICIPANT))],

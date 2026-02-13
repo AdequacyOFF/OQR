@@ -1,7 +1,24 @@
 {
   "permissions": {
     "allow": [
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(poetry env info:*)",
+      "Bash(dir:*)",
+      "Bash(poetry run python:*)",
+      "Bash(poetry run pip:*)",
+      "Bash(poetry install:*)",
+      "Bash(poetry run pytest:*)",
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)",
+      "Bash(poetry lock:*)",
+      "Bash(docker compose:*)",
+      "Bash(curl:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker-compose ps:*)",
+      "Bash(timeout 10 bash:*)",
+      "Bash(set ENVIRONMENT=test)",
+      "Bash(ENVIRONMENT=test poetry run pytest:*)",
+      "Bash(timeout 15 bash -c 'while ! curl -s http://localhost:5173 > /dev/null 2>&1; do sleep 1; done')"
     ],
     "deny": [],
     "ask": []

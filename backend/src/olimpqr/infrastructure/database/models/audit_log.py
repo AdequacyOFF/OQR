@@ -4,8 +4,7 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Optional
 
-from sqlalchemy import DateTime, ForeignKey, Index, String
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import DateTime, ForeignKey, Index, JSON, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..base import Base
@@ -53,7 +52,7 @@ class AuditLogModel(Base):
         nullable=True
     )
     details: Mapped[Optional[dict[str, Any]]] = mapped_column(
-        JSONB,
+        JSON,
         nullable=True
     )
     timestamp: Mapped[datetime] = mapped_column(

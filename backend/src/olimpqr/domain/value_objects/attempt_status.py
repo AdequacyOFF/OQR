@@ -31,7 +31,7 @@ class AttemptStatus(str, Enum):
     @property
     def can_apply_score(self) -> bool:
         """Check if score can be applied."""
-        return self in (AttemptStatus.PRINTED, AttemptStatus.SCANNED, AttemptStatus.SCORED)
+        return self in (AttemptStatus.SCANNED, AttemptStatus.SCORED)
 
     @property
     def has_score(self) -> bool:

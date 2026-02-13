@@ -1,5 +1,7 @@
 """Competition entity."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from datetime import datetime, date
 from uuid import UUID, uuid4

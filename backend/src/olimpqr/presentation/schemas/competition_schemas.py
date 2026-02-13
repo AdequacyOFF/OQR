@@ -1,6 +1,6 @@
 """Competition-related Pydantic schemas."""
 
-from datetime import datetime, date
+import datetime as dt
 from typing import List
 from pydantic import BaseModel, Field
 from uuid import UUID
@@ -12,9 +12,9 @@ from ...domain.entities import Competition
 class CreateCompetitionRequest(BaseModel):
     """Request schema for creating a competition."""
     name: str = Field(..., min_length=3, description="Competition name")
-    date: date = Field(..., description="Competition date")
-    registration_start: datetime = Field(..., description="Registration start datetime")
-    registration_end: datetime = Field(..., description="Registration end datetime")
+    date: dt.date = Field(..., description="Competition date")
+    registration_start: dt.datetime = Field(..., description="Registration start datetime")
+    registration_end: dt.datetime = Field(..., description="Registration end datetime")
     variants_count: int = Field(..., ge=1, description="Number of test variants")
     max_score: int = Field(..., ge=1, description="Maximum possible score")
 
@@ -37,9 +37,9 @@ class CreateCompetitionRequest(BaseModel):
 class UpdateCompetitionRequest(BaseModel):
     """Request schema for updating a competition. All fields are optional."""
     name: str | None = Field(None, min_length=3, description="Competition name")
-    date: date | None = Field(None, description="Competition date")
-    registration_start: datetime | None = Field(None, description="Registration start datetime")
-    registration_end: datetime | None = Field(None, description="Registration end datetime")
+    date: dt.date | None = Field(None, description="Competition date")
+    registration_start: dt.datetime | None = Field(None, description="Registration start datetime")
+    registration_end: dt.datetime | None = Field(None, description="Registration end datetime")
     variants_count: int | None = Field(None, ge=1, description="Number of test variants")
     max_score: int | None = Field(None, ge=1, description="Maximum possible score")
 
@@ -59,15 +59,15 @@ class CompetitionResponse(BaseModel):
     """Response schema for competition data."""
     id: UUID
     name: str
-    date: date
-    registration_start: datetime
-    registration_end: datetime
+    date: dt.date
+    registration_start: dt.datetime
+    registration_end: dt.datetime
     variants_count: int
     max_score: int
     status: CompetitionStatus
     created_by: UUID
-    created_at: datetime
-    updated_at: datetime
+    created_at: dt.datetime
+    updated_at: dt.datetime
 
     @classmethod
     def from_entity(cls, entity: Competition) -> "CompetitionResponse":

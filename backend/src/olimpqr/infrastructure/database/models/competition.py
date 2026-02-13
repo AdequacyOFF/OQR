@@ -1,5 +1,7 @@
 """Competition model."""
 
+from __future__ import annotations
+
 import uuid
 from datetime import date, datetime
 from typing import TYPE_CHECKING
@@ -55,7 +57,13 @@ class CompetitionModel(Base):
         nullable=False
     )
     status: Mapped[CompetitionStatus] = mapped_column(
-        SQLEnum(CompetitionStatus, name="competition_status", native_enum=False),
+        SQLEnum(
+            CompetitionStatus,
+            name="competitionstatus",
+            native_enum=True,
+            create_type=False,
+            values_callable=lambda e: [member.value for member in e],
+        ),
         nullable=False,
         default=CompetitionStatus.DRAFT,
         index=True
