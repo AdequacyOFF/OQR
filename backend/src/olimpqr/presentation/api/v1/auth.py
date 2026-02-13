@@ -1,9 +1,10 @@
 """Authentication API endpoints."""
 
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ....infrastructure.security.rate_limiter import limiter
 from ....infrastructure.database import get_db
 from ....infrastructure.repositories import UserRepositoryImpl, ParticipantRepositoryImpl
 from ....application.use_cases.auth import RegisterUserUseCase, LoginUserUseCase
@@ -17,8 +18,10 @@ router = APIRouter()
 
 
 @router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("3/minute")
 async def register(
-    request: RegisterRequest,
+    request: Request,
+    body: RegisterRequest,
     db: Annotated[AsyncSession, Depends(get_db)]
 ):
     """Register a new user.
@@ -31,6 +34,7 @@ async def register(
     - **grade**: School grade 1-12 (required for participants)
 
     Returns JWT access token and user information.
+    Rate limited to 3 requests per minute.
     """
     try:
         # Create repositories
@@ -42,12 +46,12 @@ async def register(
 
         # Create DTO
         dto = RegisterUserDTO(
-            email=request.email,
-            password=request.password,
-            role=request.role,
-            full_name=request.full_name,
-            school=request.school,
-            grade=request.grade
+            email=body.email,
+            password=body.password,
+            role=body.role,
+            full_name=body.full_name,
+            school=body.school,
+            grade=body.grade
         )
 
         # Execute use case
@@ -70,8 +74,10 @@ async def register(
 
 
 @router.post("/login", response_model=AuthResponse)
+@limiter.limit("5/minute")
 async def login(
-    request: LoginRequest,
+    request: Request,
+    body: LoginRequest,
     db: Annotated[AsyncSession, Depends(get_db)]
 ):
     """Login with email and password.
@@ -80,6 +86,7 @@ async def login(
     - **password**: User password
 
     Returns JWT access token and user information.
+    Rate limited to 5 requests per minute.
     """
     try:
         # Create repository
@@ -90,8 +97,8 @@ async def login(
 
         # Create DTO
         dto = LoginUserDTO(
-            email=request.email,
-            password=request.password
+            email=body.email,
+            password=body.password
         )
 
         # Execute use case
