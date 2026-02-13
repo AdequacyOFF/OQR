@@ -1,0 +1,23 @@
+"""API v1 routers."""
+
+from fastapi import APIRouter
+from .auth import router as auth_router
+from .competitions import router as competitions_router
+from .registrations import router as registrations_router
+from .admission import router as admission_router
+from .scans import router as scans_router
+from .admin import router as admin_router
+from .results import router as results_router
+
+api_router = APIRouter()
+
+# Include routers
+api_router.include_router(auth_router, prefix="/auth", tags=["Authentication"])
+api_router.include_router(competitions_router, prefix="/competitions", tags=["Competitions"])
+api_router.include_router(registrations_router, prefix="/registrations", tags=["Registrations"])
+api_router.include_router(admission_router, prefix="/admission", tags=["Admission"])
+api_router.include_router(scans_router, prefix="/scans", tags=["Scans"])
+api_router.include_router(admin_router, prefix="/admin", tags=["Admin"])
+api_router.include_router(results_router, prefix="/results", tags=["Results"])
+
+__all__ = ["api_router"]

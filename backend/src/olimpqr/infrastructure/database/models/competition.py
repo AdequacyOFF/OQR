@@ -1,0 +1,91 @@
+"""Competition model."""
+
+import uuid
+from datetime import date, datetime
+from typing import TYPE_CHECKING
+
+from sqlalchemy import Date, DateTime, Enum as SQLEnum, ForeignKey, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from olimpqr.domain.value_objects.competition_status import CompetitionStatus
+
+from ..base import Base
+
+if TYPE_CHECKING:
+    from .registration import RegistrationModel
+    from .user import UserModel
+
+
+class CompetitionModel(Base):
+    """Competition database model."""
+
+    __tablename__ = "competitions"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        primary_key=True,
+        default=uuid.uuid4,
+        index=True
+    )
+    name: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        index=True
+    )
+    date: Mapped[date] = mapped_column(
+        Date,
+        nullable=False,
+        index=True
+    )
+    registration_start: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        index=True
+    )
+    registration_end: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        index=True
+    )
+    variants_count: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False
+    )
+    max_score: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False
+    )
+    status: Mapped[CompetitionStatus] = mapped_column(
+        SQLEnum(CompetitionStatus, name="competition_status", native_enum=False),
+        nullable=False,
+        default=CompetitionStatus.DRAFT,
+        index=True
+    )
+    created_by: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        nullable=False,
+        default=datetime.utcnow
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        nullable=False,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow
+    )
+
+    # Relationships
+    creator: Mapped["UserModel"] = relationship(
+        "UserModel",
+        back_populates="competitions_created",
+        foreign_keys=[created_by],
+        lazy="selectin"
+    )
+    registrations: Mapped[list["RegistrationModel"]] = relationship(
+        "RegistrationModel",
+        back_populates="competition"
+    )
+
+    def __repr__(self) -> str:
+        return f"<CompetitionModel(id={self.id}, name={self.name}, status={self.status})>"

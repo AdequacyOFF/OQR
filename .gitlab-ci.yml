@@ -1,0 +1,147 @@
+# GitLab CI/CD Pipeline for OlimpQR
+
+stages:
+  - lint
+  - test
+  - build
+  - deploy
+
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: "/certs"
+
+# Lint stage
+lint:backend:
+  stage: lint
+  image: python:3.13-slim
+  before_script:
+    - cd backend
+    - pip install poetry
+    - poetry install --no-root
+  script:
+    - poetry run ruff check src/
+    - poetry run mypy src/
+  only:
+    - merge_requests
+    - main
+
+lint:frontend:
+  stage: lint
+  image: node:20-alpine
+  before_script:
+    - cd frontend
+    - npm ci
+  script:
+    - npm run lint
+  only:
+    - merge_requests
+    - main
+
+# Test stage
+test:backend:
+  stage: test
+  image: python:3.13-slim
+  services:
+    - postgres:16-alpine
+    - redis:7-alpine
+  variables:
+    POSTGRES_DB: olimpqr_test
+    POSTGRES_USER: olimpqr_test
+    POSTGRES_PASSWORD: test_password
+    DATABASE_URL: postgresql+asyncpg://olimpqr_test:test_password@postgres:5432/olimpqr_test
+    REDIS_URL: redis://redis:6379/0
+    SECRET_KEY: test-secret-key-for-ci-pipeline-32chars
+    HMAC_SECRET_KEY: test-hmac-key-for-ci-pipeline-32chars
+  before_script:
+    - cd backend
+    - pip install poetry
+    - poetry install --no-root
+  script:
+    - poetry run pytest tests/ -v --cov=src/olimpqr --cov-report=xml
+  coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: backend/coverage.xml
+  only:
+    - merge_requests
+    - main
+
+test:frontend:
+  stage: test
+  image: node:20-alpine
+  before_script:
+    - cd frontend
+    - npm ci
+  script:
+    - npm run test
+  only:
+    - merge_requests
+    - main
+
+# Build stage
+build:backend:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - docker build -f docker/backend/Dockerfile -t $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA .
+    - docker tag $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE/backend:latest
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker push $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA
+    - docker push $CI_REGISTRY_IMAGE/backend:latest
+  only:
+    - main
+
+build:frontend:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - docker build -f docker/frontend/Dockerfile --target production -t $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_SHA .
+    - docker tag $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE/frontend:latest
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker push $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_SHA
+    - docker push $CI_REGISTRY_IMAGE/frontend:latest
+  only:
+    - main
+
+# Deploy to staging (automatic)
+deploy:staging:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache openssh-client
+    - eval $(ssh-agent -s)
+    - echo "$STAGING_SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+  script:
+    - ssh -o StrictHostKeyChecking=no $STAGING_USER@$STAGING_HOST "cd /opt/olimpqr && docker-compose pull && docker-compose up -d"
+  environment:
+    name: staging
+    url: https://staging.olimpqr.example.com
+  only:
+    - main
+
+# Deploy to production (manual)
+deploy:production:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache openssh-client
+    - eval $(ssh-agent -s)
+    - echo "$PRODUCTION_SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+  script:
+    - ssh -o StrictHostKeyChecking=no $PRODUCTION_USER@$PRODUCTION_HOST "cd /opt/olimpqr && docker-compose pull && docker-compose up -d"
+  environment:
+    name: production
+    url: https://olimpqr.example.com
+  when: manual
+  only:
+    - main

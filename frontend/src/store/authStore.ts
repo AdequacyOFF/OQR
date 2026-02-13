@@ -1,0 +1,73 @@
+import { create } from 'zustand';
+import api from '../api/client';
+import type { UserInfo, AuthResponse } from '../types';
+
+interface AuthState {
+  token: string | null;
+  user: UserInfo | null;
+  isAuthenticated: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  register: (data: {
+    email: string;
+    password: string;
+    role: string;
+    full_name: string;
+    school?: string;
+    grade?: number;
+  }) => Promise<void>;
+  logout: () => void;
+  loadFromStorage: () => Promise<void>;
+}
+
+const useAuthStore = create<AuthState>((set) => ({
+  token: null,
+  user: null,
+  isAuthenticated: false,
+
+  login: async (email: string, password: string) => {
+    const params = new URLSearchParams();
+    params.append('username', email);
+    params.append('password', password);
+
+    const { data } = await api.post<AuthResponse>('/auth/login', params, {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    });
+
+    localStorage.setItem('access_token', data.access_token);
+    set({ token: data.access_token });
+
+    const { data: user } = await api.get<UserInfo>('/auth/me');
+    set({ user, isAuthenticated: true });
+  },
+
+  register: async (data) => {
+    const { data: authData } = await api.post<AuthResponse>('/auth/register', data);
+
+    localStorage.setItem('access_token', authData.access_token);
+    set({ token: authData.access_token });
+
+    const { data: user } = await api.get<UserInfo>('/auth/me');
+    set({ user, isAuthenticated: true });
+  },
+
+  logout: () => {
+    localStorage.removeItem('access_token');
+    set({ token: null, user: null, isAuthenticated: false });
+  },
+
+  loadFromStorage: async () => {
+    const token = localStorage.getItem('access_token');
+    if (!token) return;
+
+    set({ token });
+    try {
+      const { data: user } = await api.get<UserInfo>('/auth/me');
+      set({ user, isAuthenticated: true });
+    } catch {
+      localStorage.removeItem('access_token');
+      set({ token: null, user: null, isAuthenticated: false });
+    }
+  },
+}));
+
+export default useAuthStore;

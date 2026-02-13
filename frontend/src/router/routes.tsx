@@ -1,0 +1,166 @@
+import React, { useEffect, useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import useAuthStore from '../store/authStore';
+import type { UserRole } from '../types';
+import Spinner from '../components/common/Spinner';
+
+// Auth pages
+import LoginPage from '../pages/auth/LoginPage';
+import RegisterPage from '../pages/auth/RegisterPage';
+
+// Participant pages
+import DashboardPage from '../pages/participant/DashboardPage';
+import EntryQRPage from '../pages/participant/EntryQRPage';
+
+// Admitter pages
+import AdmissionPage from '../pages/admitter/AdmissionPage';
+
+// Scanner pages
+import ScansPage from '../pages/scanner/ScansPage';
+import ScanDetailPage from '../pages/scanner/ScanDetailPage';
+
+// Admin pages
+import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
+import UsersPage from '../pages/admin/UsersPage';
+import AuditLogPage from '../pages/admin/AuditLogPage';
+import CompetitionsAdminPage from '../pages/admin/CompetitionsAdminPage';
+
+// Public pages
+import ResultsPage from '../pages/public/ResultsPage';
+
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  allowedRoles?: UserRole[];
+}
+
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
+  const { isAuthenticated, user } = useAuthStore();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+const AppRouter: React.FC = () => {
+  const { loadFromStorage } = useAuthStore();
+  const [initializing, setInitializing] = useState(true);
+
+  useEffect(() => {
+    loadFromStorage().finally(() => setInitializing(false));
+  }, [loadFromStorage]);
+
+  if (initializing) {
+    return <Spinner />;
+  }
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* Public routes */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/results/:competitionId" element={<ResultsPage />} />
+
+        {/* Participant routes */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={['participant']}>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/competitions"
+          element={
+            <ProtectedRoute allowedRoles={['participant']}>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/registrations/:id/qr"
+          element={
+            <ProtectedRoute allowedRoles={['participant']}>
+              <EntryQRPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Admitter routes */}
+        <Route
+          path="/admission"
+          element={
+            <ProtectedRoute allowedRoles={['admitter']}>
+              <AdmissionPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Scanner routes */}
+        <Route
+          path="/scans"
+          element={
+            <ProtectedRoute allowedRoles={['scanner']}>
+              <ScansPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/scans/:id"
+          element={
+            <ProtectedRoute allowedRoles={['scanner']}>
+              <ScanDetailPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Admin routes */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminDashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/users"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <UsersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/audit-log"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AuditLogPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/competitions"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <CompetitionsAdminPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Default redirect */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    </BrowserRouter>
+  );
+};
+
+export default AppRouter;
