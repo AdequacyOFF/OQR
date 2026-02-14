@@ -108,6 +108,20 @@ class RegistrationRepositoryImpl(RegistrationRepository):
         models = result.scalars().all()
         return [self._to_entity(model) for model in models]
 
+    async def get_by_participant_id(
+        self, participant_id: UUID, skip: int = 0, limit: int = 100
+    ) -> List[Registration]:
+        """Get all registrations for a participant."""
+        result = await self.session.execute(
+            select(RegistrationModel)
+            .where(RegistrationModel.participant_id == participant_id)
+            .offset(skip)
+            .limit(limit)
+            .order_by(RegistrationModel.created_at.desc())
+        )
+        models = result.scalars().all()
+        return [self._to_entity(model) for model in models]
+
     def _to_entity(self, model: RegistrationModel) -> Registration:
         """Convert SQLAlchemy model to domain entity."""
         return Registration(

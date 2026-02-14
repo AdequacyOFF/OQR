@@ -8,12 +8,12 @@ import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
 
 const registerSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  email: z.string().email('Введите корректный email'),
+  password: z.string().min(6, 'Пароль должен содержать минимум 6 символов'),
   role: z.enum(['participant', 'admitter', 'scanner', 'admin'], {
-    required_error: 'Please select a role',
+    required_error: 'Выберите роль',
   }),
-  full_name: z.string().min(1, 'Full name is required'),
+  full_name: z.string().min(1, 'Введите ФИО'),
   school: z.string().optional(),
   grade: z.coerce.number().min(1).max(12).optional(),
 });
@@ -65,7 +65,7 @@ const RegisterPage: React.FC = () => {
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
-        'Registration failed. Please try again.';
+        'Ошибка регистрации. Попробуйте снова.';
       setError(message);
     } finally {
       setLoading(false);
@@ -75,53 +75,53 @@ const RegisterPage: React.FC = () => {
   return (
     <div className="auth-wrapper">
       <div className="card auth-card">
-        <h1>Register</h1>
+        <h1>Регистрация</h1>
         {error && <div className="alert alert-error">{error}</div>}
         <form onSubmit={handleSubmit(onSubmit)}>
           <Input
-            label="Full Name"
-            placeholder="John Doe"
+            label="ФИО"
+            placeholder="Иванов Иван Иванович"
             error={errors.full_name?.message}
             {...register('full_name')}
           />
           <Input
             label="Email"
             type="email"
-            placeholder="you@example.com"
+            placeholder="example@mail.ru"
             error={errors.email?.message}
             {...register('email')}
           />
           <Input
-            label="Password"
+            label="Пароль"
             type="password"
-            placeholder="At least 6 characters"
+            placeholder="Минимум 6 символов"
             error={errors.password?.message}
             {...register('password')}
           />
           <div className="form-group">
-            <label htmlFor="role">Role</label>
+            <label htmlFor="role">Роль</label>
             <select
               id="role"
               className="input"
               {...register('role')}
             >
-              <option value="participant">Participant</option>
-              <option value="admitter">Admitter</option>
-              <option value="scanner">Scanner</option>
-              <option value="admin">Admin</option>
+              <option value="participant">Участник</option>
+              <option value="admitter">Допуск</option>
+              <option value="scanner">Сканер</option>
+              <option value="admin">Администратор</option>
             </select>
             {errors.role && <p className="error-text">{errors.role.message}</p>}
           </div>
           {selectedRole === 'participant' && (
             <>
               <Input
-                label="School"
-                placeholder="Your school name"
+                label="Школа"
+                placeholder="Название школы"
                 error={errors.school?.message}
                 {...register('school')}
               />
               <Input
-                label="Grade"
+                label="Класс"
                 type="number"
                 placeholder="1-12"
                 min={1}
@@ -132,11 +132,11 @@ const RegisterPage: React.FC = () => {
             </>
           )}
           <Button type="submit" loading={loading} style={{ width: '100%' }}>
-            Register
+            Зарегистрироваться
           </Button>
         </form>
         <p className="text-center mt-16 text-muted">
-          Already have an account? <Link to="/login">Sign In</Link>
+          Уже есть аккаунт? <Link to="/login">Войти</Link>
         </p>
       </div>
     </div>

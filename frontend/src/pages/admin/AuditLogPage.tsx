@@ -18,10 +18,10 @@ const AuditLogPage: React.FC = () => {
   const loadEntries = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get<AuditLogEntry[]>('admin/audit-log');
-      setEntries(data);
+      const { data } = await api.get<{ items: AuditLogEntry[]; total: number }>('admin/audit-log');
+      setEntries(data.items || []);
     } catch {
-      setError('Failed to load audit log.');
+      setError('Не удалось загрузить журнал действий.');
     } finally {
       setLoading(false);
     }
@@ -46,19 +46,19 @@ const AuditLogPage: React.FC = () => {
 
   return (
     <Layout>
-      <h1 className="mb-24">Audit Log</h1>
+      <h1 className="mb-24">Журнал действий</h1>
 
       {error && <div className="alert alert-error mb-16">{error}</div>}
 
       <div className="flex gap-16 mb-16">
         <div className="form-group" style={{ minWidth: 180 }}>
-          <label>Entity Type</label>
+          <label>Тип сущности</label>
           <select
             className="input"
             value={entityTypeFilter}
             onChange={(e) => setEntityTypeFilter(e.target.value)}
           >
-            <option value="">All</option>
+            <option value="">Все</option>
             {entityTypes.map((type) => (
               <option key={type} value={type}>
                 {type}
@@ -67,13 +67,13 @@ const AuditLogPage: React.FC = () => {
           </select>
         </div>
         <div className="form-group" style={{ minWidth: 180 }}>
-          <label>Action</label>
+          <label>Действие</label>
           <select
             className="input"
             value={actionFilter}
             onChange={(e) => setActionFilter(e.target.value)}
           >
-            <option value="">All</option>
+            <option value="">Все</option>
             {actions.map((action) => (
               <option key={action} value={action}>
                 {action}
@@ -86,26 +86,26 @@ const AuditLogPage: React.FC = () => {
       <table className="table">
         <thead>
           <tr>
-            <th>Timestamp</th>
-            <th>Entity Type</th>
-            <th>Entity ID</th>
-            <th>Action</th>
-            <th>User ID</th>
-            <th>IP Address</th>
-            <th>Details</th>
+            <th>Время</th>
+            <th>Тип сущности</th>
+            <th>ID сущности</th>
+            <th>Действие</th>
+            <th>ID пользователя</th>
+            <th>IP адрес</th>
+            <th>Детали</th>
           </tr>
         </thead>
         <tbody>
           {filteredEntries.length === 0 ? (
             <tr>
               <td colSpan={7} className="text-center text-muted">
-                No entries found.
+                Записей не найдено.
               </td>
             </tr>
           ) : (
             filteredEntries.map((entry) => (
               <tr key={entry.id}>
-                <td>{new Date(entry.timestamp).toLocaleString()}</td>
+                <td>{new Date(entry.timestamp).toLocaleString('ru-RU')}</td>
                 <td>{entry.entity_type}</td>
                 <td style={{ fontSize: 12 }}>{entry.entity_id.slice(0, 8)}...</td>
                 <td>{entry.action}</td>

@@ -11,12 +11,12 @@ import Modal from '../../components/common/Modal';
 import Spinner from '../../components/common/Spinner';
 
 const competitionSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  date: z.string().min(1, 'Date is required'),
-  registration_start: z.string().min(1, 'Required'),
-  registration_end: z.string().min(1, 'Required'),
-  variants_count: z.coerce.number().min(1, 'At least 1 variant'),
-  max_score: z.coerce.number().min(1, 'Must be positive'),
+  name: z.string().min(1, 'Название обязательно'),
+  date: z.string().min(1, 'Дата обязательна'),
+  registration_start: z.string().min(1, 'Обязательное поле'),
+  registration_end: z.string().min(1, 'Обязательное поле'),
+  variants_count: z.coerce.number().min(1, 'Минимум 1 вариант'),
+  max_score: z.coerce.number().min(1, 'Должно быть положительным'),
 });
 
 type CompetitionForm = z.infer<typeof competitionSchema>;
@@ -46,10 +46,10 @@ const CompetitionsAdminPage: React.FC = () => {
   const loadCompetitions = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get<Competition[]>('competitions');
-      setCompetitions(data);
+      const { data } = await api.get<{ competitions: Competition[]; total: number }>('competitions');
+      setCompetitions(data.competitions || []);
     } catch {
-      setError('Failed to load competitions.');
+      setError('Не удалось загрузить олимпиады.');
     } finally {
       setLoading(false);
     }
@@ -95,7 +95,7 @@ const CompetitionsAdminPage: React.FC = () => {
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
-        'Failed to save competition.';
+        'Не удалось сохранить олимпиаду.';
       setError(message);
     } finally {
       setSaving(false);
@@ -107,8 +107,19 @@ const CompetitionsAdminPage: React.FC = () => {
       await api.put(`competitions/${id}`, { status });
       await loadCompetitions();
     } catch {
-      setError('Failed to update status.');
+      setError('Не удалось обновить статус.');
     }
+  };
+
+  const getStatusLabel = (status: string): string => {
+    const labels: Record<string, string> = {
+      draft: 'Черновик',
+      registration_open: 'Регистрация открыта',
+      in_progress: 'Проходит',
+      finished: 'Завершена',
+      published: 'Опубликована',
+    };
+    return labels[status] || status;
   };
 
   if (loading) {
@@ -122,8 +133,8 @@ const CompetitionsAdminPage: React.FC = () => {
   return (
     <Layout>
       <div className="flex-between mb-24">
-        <h1>Competitions</h1>
-        <Button onClick={openCreate}>Create Competition</Button>
+        <h1>Олимпиады</h1>
+        <Button onClick={openCreate}>Создать олимпиаду</Button>
       </div>
 
       {error && <div className="alert alert-error mb-16">{error}</div>}
@@ -131,27 +142,27 @@ const CompetitionsAdminPage: React.FC = () => {
       <table className="table">
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Date</th>
-            <th>Status</th>
-            <th>Variants</th>
-            <th>Max Score</th>
-            <th>Actions</th>
+            <th>Название</th>
+            <th>Дата</th>
+            <th>Статус</th>
+            <th>Варианты</th>
+            <th>Макс. балл</th>
+            <th>Действия</th>
           </tr>
         </thead>
         <tbody>
           {competitions.length === 0 ? (
             <tr>
               <td colSpan={6} className="text-center text-muted">
-                No competitions yet.
+                Олимпиад пока нет.
               </td>
             </tr>
           ) : (
             competitions.map((comp) => (
               <tr key={comp.id}>
                 <td>{comp.name}</td>
-                <td>{new Date(comp.date).toLocaleDateString()}</td>
-                <td>{comp.status}</td>
+                <td>{new Date(comp.date).toLocaleDateString('ru-RU')}</td>
+                <td>{getStatusLabel(comp.status)}</td>
                 <td>{comp.variants_count}</td>
                 <td>{comp.max_score}</td>
                 <td>
@@ -161,14 +172,14 @@ const CompetitionsAdminPage: React.FC = () => {
                       className="btn-sm"
                       onClick={() => openEdit(comp)}
                     >
-                      Edit
+                      Изменить
                     </Button>
                     {comp.status === 'draft' && (
                       <Button
                         className="btn-sm"
                         onClick={() => handleStatusChange(comp.id, 'registration_open')}
                       >
-                        Open Reg
+                        Открыть рег.
                       </Button>
                     )}
                     {comp.status === 'registration_open' && (
@@ -177,7 +188,7 @@ const CompetitionsAdminPage: React.FC = () => {
                         className="btn-sm"
                         onClick={() => handleStatusChange(comp.id, 'in_progress')}
                       >
-                        Start
+                        Начать
                       </Button>
                     )}
                     {comp.status === 'in_progress' && (
@@ -186,7 +197,7 @@ const CompetitionsAdminPage: React.FC = () => {
                         className="btn-sm"
                         onClick={() => handleStatusChange(comp.id, 'finished')}
                       >
-                        Finish
+                        Завершить
                       </Button>
                     )}
                   </div>
@@ -204,48 +215,48 @@ const CompetitionsAdminPage: React.FC = () => {
           reset();
           setEditingId(null);
         }}
-        title={editingId ? 'Edit Competition' : 'Create Competition'}
+        title={editingId ? 'Редактировать олимпиаду' : 'Создать олимпиаду'}
       >
         <form onSubmit={handleSubmit(onSubmit)}>
           <Input
-            label="Name"
+            label="Название"
             error={errors.name?.message}
             {...register('name')}
           />
           <Input
-            label="Date"
+            label="Дата проведения"
             type="datetime-local"
             error={errors.date?.message}
             {...register('date')}
           />
           <Input
-            label="Registration Start"
+            label="Начало регистрации"
             type="datetime-local"
             error={errors.registration_start?.message}
             {...register('registration_start')}
           />
           <Input
-            label="Registration End"
+            label="Конец регистрации"
             type="datetime-local"
             error={errors.registration_end?.message}
             {...register('registration_end')}
           />
           <Input
-            label="Variants Count"
+            label="Количество вариантов"
             type="number"
             min={1}
             error={errors.variants_count?.message}
             {...register('variants_count')}
           />
           <Input
-            label="Max Score"
+            label="Максимальный балл"
             type="number"
             min={1}
             error={errors.max_score?.message}
             {...register('max_score')}
           />
           <Button type="submit" loading={saving} style={{ width: '100%' }}>
-            {editingId ? 'Update' : 'Create'}
+            {editingId ? 'Сохранить' : 'Создать'}
           </Button>
         </form>
       </Modal>

@@ -20,7 +20,8 @@ from ....application.use_cases.registration import (
 )
 from ...schemas.registration_schemas import (
     RegisterForCompetitionRequest,
-    RegistrationResponse
+    RegistrationResponse,
+    RegistrationListResponse
 )
 from ...dependencies import require_role, get_current_active_user
 from ....config import settings
@@ -88,3 +89,46 @@ async def register_for_competition(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
+
+
+@router.get("", response_model=RegistrationListResponse)
+async def get_my_registrations(
+    current_user: Annotated[User, Depends(require_role(UserRole.PARTICIPANT))],
+    db: Annotated[AsyncSession, Depends(get_db)],
+    skip: int = 0,
+    limit: int = 100
+):
+    """Get current participant's registrations.
+
+    Requires participant role.
+    Returns list of all registrations for the current user.
+    """
+    # Get participant by user_id
+    participant_repo = ParticipantRepositoryImpl(db)
+    participant = await participant_repo.get_by_user_id(current_user.id)
+    if not participant:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Participant profile not found"
+        )
+
+    # Get registrations
+    registration_repo = RegistrationRepositoryImpl(db)
+    registrations = await registration_repo.get_by_participant_id(
+        participant.id, skip=skip, limit=limit
+    )
+
+    return RegistrationListResponse(
+        items=[
+            RegistrationResponse(
+                id=r.id,
+                participant_id=r.participant_id,
+                competition_id=r.competition_id,
+                status=r.status,
+                created_at=r.created_at,
+                entry_token=None
+            )
+            for r in registrations
+        ],
+        total=len(registrations)
+    )

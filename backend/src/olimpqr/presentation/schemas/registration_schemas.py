@@ -35,6 +35,12 @@ class RegistrationResponse(BaseModel):
     }
 
 
+class RegistrationListResponse(BaseModel):
+    """Response with list of registrations."""
+    items: list[RegistrationResponse]
+    total: int
+
+
 class EntryQRResponse(BaseModel):
     """Response with entry QR code."""
     qr_code_base64: str

@@ -19,21 +19,21 @@ const Header: React.FC = () => {
       case 'participant':
         return (
           <>
-            <Link to="/dashboard">Dashboard</Link>
-            <Link to="/competitions">Competitions</Link>
+            <Link to="/dashboard">Главная</Link>
+            <Link to="/competitions">Олимпиады</Link>
           </>
         );
       case 'admitter':
-        return <Link to="/admission">Admission</Link>;
+        return <Link to="/admission">Допуск</Link>;
       case 'scanner':
-        return <Link to="/scans">Scans</Link>;
+        return <Link to="/scans">Сканы</Link>;
       case 'admin':
         return (
           <>
-            <Link to="/admin">Dashboard</Link>
-            <Link to="/admin/competitions">Competitions</Link>
-            <Link to="/admin/users">Users</Link>
-            <Link to="/admin/audit-log">Audit Log</Link>
+            <Link to="/admin">Главная</Link>
+            <Link to="/admin/competitions">Олимпиады</Link>
+            <Link to="/admin/users">Пользователи</Link>
+            <Link to="/admin/audit-log">Журнал</Link>
           </>
         );
       default:
@@ -53,13 +53,13 @@ const Header: React.FC = () => {
               {renderNavLinks()}
               <span className="text-muted">{user?.email}</span>
               <Button variant="secondary" onClick={handleLogout}>
-                Logout
+                Выйти
               </Button>
             </>
           ) : (
             <>
-              <Link to="/login">Login</Link>
-              <Link to="/register">Register</Link>
+              <Link to="/login">Вход</Link>
+              <Link to="/register">Регистрация</Link>
             </>
           )}
         </nav>

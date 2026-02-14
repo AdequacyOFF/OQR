@@ -16,7 +16,7 @@ const ResultsPage: React.FC = () => {
         const { data } = await api.get<ResultEntry[]>(`results/${competitionId}`);
         setResults(data);
       } catch {
-        setError('Failed to load results.');
+        setError('Не удалось загрузить результаты.');
       } finally {
         setLoading(false);
       }
@@ -35,23 +35,23 @@ const ResultsPage: React.FC = () => {
 
   return (
     <div className="container">
-      <h1 className="mb-24 text-center">Competition Results</h1>
+      <h1 className="mb-24 text-center">Результаты олимпиады</h1>
 
       {error && <div className="alert alert-error mb-16">{error}</div>}
 
       {results.length === 0 ? (
-        <p className="text-center text-muted">No results available yet.</p>
+        <p className="text-center text-muted">Результаты пока недоступны.</p>
       ) : (
         <div className="card">
           <table className="table">
             <thead>
               <tr>
-                <th>Rank</th>
-                <th>Name</th>
-                <th>School</th>
-                <th>Grade</th>
-                <th>Score</th>
-                <th>Max Score</th>
+                <th>Место</th>
+                <th>ФИО</th>
+                <th>Школа</th>
+                <th>Класс</th>
+                <th>Балл</th>
+                <th>Макс. балл</th>
               </tr>
             </thead>
             <tbody>

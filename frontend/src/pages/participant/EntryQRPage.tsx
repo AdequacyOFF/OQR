@@ -18,7 +18,7 @@ const EntryQRPage: React.FC = () => {
         const { data } = await api.get<Registration>(`registrations/${id}`);
         setRegistration(data);
       } catch {
-        setError('Failed to load registration.');
+        setError('Не удалось загрузить регистрацию.');
       } finally {
         setLoading(false);
       }
@@ -38,7 +38,7 @@ const EntryQRPage: React.FC = () => {
   if (error || !registration) {
     return (
       <Layout>
-        <div className="alert alert-error">{error || 'Registration not found.'}</div>
+        <div className="alert alert-error">{error || 'Регистрация не найдена.'}</div>
       </Layout>
     );
   }
@@ -48,21 +48,21 @@ const EntryQRPage: React.FC = () => {
   return (
     <Layout>
       <div className="card" style={{ maxWidth: 500, margin: '0 auto' }}>
-        <h1 className="text-center mb-24">Entry QR Code</h1>
+        <h1 className="text-center mb-24">Входной QR-код</h1>
         <QRCodeDisplay value={token} size={300} />
         <div className="text-center mt-16">
           <p className="text-muted mb-16">
-            Registration ID: {registration.id}
+            ID регистрации: {registration.id}
           </p>
           <p className="text-muted mb-16">
-            Status: {registration.status}
+            Статус: {registration.status}
           </p>
           <div className="alert alert-warning">
-            <strong>Important:</strong> Save this QR code. The entry token may be shown only once.
-            Present this QR code at the admission desk on the competition day.
+            <strong>Важно:</strong> Сохраните этот QR-код. Входной токен может быть показан только один раз.
+            Предъявите этот QR-код на стойке регистрации в день олимпиады.
           </div>
-          <p className="mt-16" style={{ fontSize: 12, wordBreak: 'break-all', color: '#6b7280' }}>
-            Token: {token}
+          <p className="mt-16" style={{ fontSize: 12, wordBreak: 'break-all', color: 'var(--text-muted)' }}>
+            Токен: {token}
           </p>
         </div>
       </div>

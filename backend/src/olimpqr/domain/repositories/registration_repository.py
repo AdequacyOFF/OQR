@@ -24,3 +24,10 @@ class RegistrationRepository(BaseRepository[Registration]):
     ) -> List[Registration]:
         """Get all registrations for a competition."""
         pass
+
+    @abstractmethod
+    async def get_by_participant_id(
+        self, participant_id: UUID, skip: int = 0, limit: int = 100
+    ) -> List[Registration]:
+        """Get all registrations for a participant."""
+        pass

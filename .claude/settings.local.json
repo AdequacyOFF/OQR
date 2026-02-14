@@ -18,7 +18,12 @@
       "Bash(timeout 10 bash:*)",
       "Bash(set ENVIRONMENT=test)",
       "Bash(ENVIRONMENT=test poetry run pytest:*)",
-      "Bash(timeout 15 bash -c 'while ! curl -s http://localhost:5173 > /dev/null 2>&1; do sleep 1; done')"
+      "Bash(timeout 15 bash -c 'while ! curl -s http://localhost:5173 > /dev/null 2>&1; do sleep 1; done')",
+      "Bash(docker-compose logs:*)",
+      "Bash(docker-compose exec:*)",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjOWEyNDVhNy1iOTYxLTQ2YjYtYmU3ZC1iMWRjMDgzOTc5NzIiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJyb2xlIjoicGFydGljaXBhbnQiLCJleHAiOjE3NzExNTU0NDQsImlhdCI6MTc3MTA2OTA0NH0.1v9NTYhsGKI64Ft3DBN6JvWtGv9MCCVJGP-l08gQeqw\" echo \"=== Testing /competitions ===\" curl -s http://localhost:8000/api/v1/competitions -H \"Authorization: Bearer $TOKEN\")",
+      "Bash(docker-compose restart:*)",
+      "Bash(npm run lint:*)"
     ],
     "deny": [],
     "ask": []

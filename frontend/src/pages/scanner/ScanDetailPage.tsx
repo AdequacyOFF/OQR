@@ -25,7 +25,7 @@ const ScanDetailPage: React.FC = () => {
           setCorrectedScore(String(data.ocr_score));
         }
       } catch {
-        setError('Failed to load scan.');
+        setError('Не удалось загрузить скан.');
       } finally {
         setLoading(false);
       }
@@ -45,11 +45,11 @@ const ScanDetailPage: React.FC = () => {
         verified_score: Number(correctedScore),
       });
       setScan(data);
-      setSuccess('Scan verified successfully.');
+      setSuccess('Скан успешно подтверждён.');
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
-        'Verification failed.';
+        'Ошибка подтверждения.';
       setError(message);
     } finally {
       setVerifying(false);
@@ -67,20 +67,20 @@ const ScanDetailPage: React.FC = () => {
   if (!scan) {
     return (
       <Layout>
-        <div className="alert alert-error">{error || 'Scan not found.'}</div>
+        <div className="alert alert-error">{error || 'Скан не найден.'}</div>
       </Layout>
     );
   }
 
   return (
     <Layout>
-      <h1 className="mb-24">Scan Detail</h1>
+      <h1 className="mb-24">Детали скана</h1>
 
       {error && <div className="alert alert-error mb-16">{error}</div>}
       {success && <div className="alert alert-success mb-16">{success}</div>}
 
       <div className="card mb-16">
-        <h2 className="mb-16">Scan Information</h2>
+        <h2 className="mb-16">Информация о скане</h2>
         <table className="table">
           <tbody>
             <tr>
@@ -88,40 +88,40 @@ const ScanDetailPage: React.FC = () => {
               <td>{scan.id}</td>
             </tr>
             <tr>
-              <td><strong>Attempt ID</strong></td>
+              <td><strong>ID попытки</strong></td>
               <td>{scan.attempt_id || '-'}</td>
             </tr>
             <tr>
-              <td><strong>File Path</strong></td>
+              <td><strong>Путь к файлу</strong></td>
               <td>{scan.file_path}</td>
             </tr>
             <tr>
-              <td><strong>OCR Score</strong></td>
-              <td>{scan.ocr_score !== null ? scan.ocr_score : 'Pending'}</td>
+              <td><strong>Балл OCR</strong></td>
+              <td>{scan.ocr_score !== null ? scan.ocr_score : 'Обрабатывается'}</td>
             </tr>
             <tr>
-              <td><strong>OCR Confidence</strong></td>
+              <td><strong>Точность OCR</strong></td>
               <td>
                 {scan.ocr_confidence !== null
                   ? `${(scan.ocr_confidence * 100).toFixed(1)}%`
-                  : 'Pending'}
+                  : 'Обрабатывается'}
               </td>
             </tr>
             <tr>
-              <td><strong>Verified By</strong></td>
-              <td>{scan.verified_by || 'Not verified'}</td>
+              <td><strong>Проверил</strong></td>
+              <td>{scan.verified_by || 'Не проверен'}</td>
             </tr>
             <tr>
-              <td><strong>Uploaded By</strong></td>
+              <td><strong>Загрузил</strong></td>
               <td>{scan.uploaded_by}</td>
             </tr>
             <tr>
-              <td><strong>Created</strong></td>
-              <td>{new Date(scan.created_at).toLocaleString()}</td>
+              <td><strong>Создан</strong></td>
+              <td>{new Date(scan.created_at).toLocaleString('ru-RU')}</td>
             </tr>
             <tr>
-              <td><strong>Updated</strong></td>
-              <td>{new Date(scan.updated_at).toLocaleString()}</td>
+              <td><strong>Обновлён</strong></td>
+              <td>{new Date(scan.updated_at).toLocaleString('ru-RU')}</td>
             </tr>
           </tbody>
         </table>
@@ -129,8 +129,8 @@ const ScanDetailPage: React.FC = () => {
 
       {scan.ocr_raw_text && (
         <div className="card mb-16">
-          <h2 className="mb-16">OCR Raw Text</h2>
-          <pre style={{ whiteSpace: 'pre-wrap', fontSize: 13, background: '#f9fafb', padding: 12, borderRadius: 6 }}>
+          <h2 className="mb-16">Распознанный текст OCR</h2>
+          <pre style={{ whiteSpace: 'pre-wrap', fontSize: 13, background: 'rgba(255,255,255,0.1)', padding: 12, borderRadius: 6 }}>
             {scan.ocr_raw_text}
           </pre>
         </div>
@@ -138,16 +138,16 @@ const ScanDetailPage: React.FC = () => {
 
       {!scan.verified_by && (
         <div className="card">
-          <h2 className="mb-16">Verify Score</h2>
+          <h2 className="mb-16">Подтвердить балл</h2>
           <Input
-            label="Corrected Score"
+            label="Исправленный балл"
             type="number"
             value={correctedScore}
             onChange={(e) => setCorrectedScore(e.target.value)}
-            placeholder="Enter verified score"
+            placeholder="Введите проверенный балл"
           />
           <Button onClick={handleVerify} loading={verifying}>
-            Verify
+            Подтвердить
           </Button>
         </div>
       )}

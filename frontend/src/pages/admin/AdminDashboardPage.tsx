@@ -5,41 +5,41 @@ import Layout from '../../components/layout/Layout';
 const AdminDashboardPage: React.FC = () => {
   return (
     <Layout>
-      <h1 className="mb-24">Admin Dashboard</h1>
+      <h1 className="mb-24">Панель администратора</h1>
       <div className="grid grid-3">
         <Link to="/admin/competitions" style={{ textDecoration: 'none' }}>
           <div className="card text-center">
-            <h2>Competitions</h2>
-            <p className="text-muted mt-16">Manage competitions, statuses, and settings</p>
+            <h2>Олимпиады</h2>
+            <p className="text-muted mt-16">Управление олимпиадами, статусами и настройками</p>
           </div>
         </Link>
         <Link to="/admin/users" style={{ textDecoration: 'none' }}>
           <div className="card text-center">
-            <h2>Users</h2>
-            <p className="text-muted mt-16">Manage user accounts and roles</p>
+            <h2>Пользователи</h2>
+            <p className="text-muted mt-16">Управление аккаунтами и ролями</p>
           </div>
         </Link>
         <Link to="/admin/audit-log" style={{ textDecoration: 'none' }}>
           <div className="card text-center">
-            <h2>Audit Log</h2>
-            <p className="text-muted mt-16">View system activity and changes</p>
+            <h2>Журнал действий</h2>
+            <p className="text-muted mt-16">Просмотр активности и изменений в системе</p>
           </div>
         </Link>
       </div>
 
       <div className="card mt-16">
-        <h2 className="mb-16">Quick Stats</h2>
+        <h2 className="mb-16">Краткая статистика</h2>
         <div className="grid grid-3">
           <div className="text-center">
-            <p className="text-muted">Total Competitions</p>
+            <p className="text-muted">Всего олимпиад</p>
             <p style={{ fontSize: 28, fontWeight: 700 }}>--</p>
           </div>
           <div className="text-center">
-            <p className="text-muted">Total Users</p>
+            <p className="text-muted">Всего пользователей</p>
             <p style={{ fontSize: 28, fontWeight: 700 }}>--</p>
           </div>
           <div className="text-center">
-            <p className="text-muted">Total Scans</p>
+            <p className="text-muted">Всего сканов</p>
             <p style={{ fontSize: 28, fontWeight: 700 }}>--</p>
           </div>
         </div>

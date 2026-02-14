@@ -11,10 +11,10 @@ import Modal from '../../components/common/Modal';
 import Spinner from '../../components/common/Spinner';
 
 const createUserSchema = z.object({
-  email: z.string().email('Invalid email'),
-  password: z.string().min(6, 'Min 6 characters'),
+  email: z.string().email('Введите корректный email'),
+  password: z.string().min(6, 'Минимум 6 символов'),
   role: z.enum(['participant', 'admitter', 'scanner', 'admin']),
-  full_name: z.string().min(1, 'Required'),
+  full_name: z.string().min(1, 'Обязательное поле'),
 });
 
 type CreateUserForm = z.infer<typeof createUserSchema>;
@@ -43,10 +43,10 @@ const UsersPage: React.FC = () => {
   const loadUsers = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get<UserInfo[]>('admin/users');
-      setUsers(data);
+      const { data } = await api.get<{ items: UserInfo[]; total: number }>('admin/users');
+      setUsers(data.items || []);
     } catch {
-      setError('Failed to load users.');
+      setError('Не удалось загрузить пользователей.');
     } finally {
       setLoading(false);
     }
@@ -63,7 +63,7 @@ const UsersPage: React.FC = () => {
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
-        'Failed to create user.';
+        'Не удалось создать пользователя.';
       setError(message);
     } finally {
       setCreating(false);
@@ -77,8 +77,18 @@ const UsersPage: React.FC = () => {
       });
       await loadUsers();
     } catch {
-      setError('Failed to update user.');
+      setError('Не удалось обновить пользователя.');
     }
+  };
+
+  const getRoleLabel = (role: string): string => {
+    const labels: Record<string, string> = {
+      participant: 'Участник',
+      admitter: 'Допуск',
+      scanner: 'Сканер',
+      admin: 'Администратор',
+    };
+    return labels[role] || role;
   };
 
   if (loading) {
@@ -92,8 +102,8 @@ const UsersPage: React.FC = () => {
   return (
     <Layout>
       <div className="flex-between mb-24">
-        <h1>Users</h1>
-        <Button onClick={() => setModalOpen(true)}>Create User</Button>
+        <h1>Пользователи</h1>
+        <Button onClick={() => setModalOpen(true)}>Создать пользователя</Button>
       </div>
 
       {error && <div className="alert alert-error mb-16">{error}</div>}
@@ -102,24 +112,24 @@ const UsersPage: React.FC = () => {
         <thead>
           <tr>
             <th>Email</th>
-            <th>Role</th>
-            <th>Active</th>
-            <th>Actions</th>
+            <th>Роль</th>
+            <th>Активен</th>
+            <th>Действия</th>
           </tr>
         </thead>
         <tbody>
           {users.map((user) => (
             <tr key={user.id}>
               <td>{user.email}</td>
-              <td>{user.role}</td>
-              <td>{user.is_active ? 'Yes' : 'No'}</td>
+              <td>{getRoleLabel(user.role)}</td>
+              <td>{user.is_active ? 'Да' : 'Нет'}</td>
               <td>
                 <Button
                   variant={user.is_active ? 'danger' : 'primary'}
                   className="btn-sm"
                   onClick={() => handleToggleActive(user)}
                 >
-                  {user.is_active ? 'Deactivate' : 'Activate'}
+                  {user.is_active ? 'Деактивировать' : 'Активировать'}
                 </Button>
               </td>
             </tr>
@@ -133,11 +143,11 @@ const UsersPage: React.FC = () => {
           setModalOpen(false);
           reset();
         }}
-        title="Create User"
+        title="Создать пользователя"
       >
         <form onSubmit={handleSubmit(handleCreate)}>
           <Input
-            label="Full Name"
+            label="ФИО"
             error={errors.full_name?.message}
             {...register('full_name')}
           />
@@ -148,23 +158,23 @@ const UsersPage: React.FC = () => {
             {...register('email')}
           />
           <Input
-            label="Password"
+            label="Пароль"
             type="password"
             error={errors.password?.message}
             {...register('password')}
           />
           <div className="form-group">
-            <label htmlFor="create-role">Role</label>
+            <label htmlFor="create-role">Роль</label>
             <select id="create-role" className="input" {...register('role')}>
-              <option value="participant">Participant</option>
-              <option value="admitter">Admitter</option>
-              <option value="scanner">Scanner</option>
-              <option value="admin">Admin</option>
+              <option value="participant">Участник</option>
+              <option value="admitter">Допуск</option>
+              <option value="scanner">Сканер</option>
+              <option value="admin">Администратор</option>
             </select>
             {errors.role && <p className="error-text">{errors.role.message}</p>}
           </div>
           <Button type="submit" loading={creating} style={{ width: '100%' }}>
-            Create
+            Создать
           </Button>
         </form>
       </Modal>

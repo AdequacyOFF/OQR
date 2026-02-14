@@ -21,10 +21,10 @@ const ScansPage: React.FC = () => {
   const loadScans = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get<ScanItem[]>('scans');
-      setScans(data);
+      const { data } = await api.get<{ items: ScanItem[]; total: number }>('scans');
+      setScans(data.items || []);
     } catch {
-      setError('Failed to load scans.');
+      setError('Не удалось загрузить сканы.');
     } finally {
       setLoading(false);
     }
@@ -48,7 +48,7 @@ const ScansPage: React.FC = () => {
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
-        'Upload failed.';
+        'Ошибка загрузки.';
       setError(message);
     } finally {
       setUploading(false);
@@ -67,7 +67,7 @@ const ScansPage: React.FC = () => {
   return (
     <Layout>
       <div className="flex-between mb-24">
-        <h1>Scans</h1>
+        <h1>Сканы</h1>
         <div>
           <input
             ref={fileRef}
@@ -77,7 +77,7 @@ const ScansPage: React.FC = () => {
             onChange={handleUpload}
           />
           <Button onClick={() => fileRef.current?.click()} loading={uploading}>
-            Upload Scan
+            Загрузить скан
           </Button>
         </div>
       </div>
@@ -85,16 +85,16 @@ const ScansPage: React.FC = () => {
       {error && <div className="alert alert-error mb-16">{error}</div>}
 
       {scans.length === 0 ? (
-        <p className="text-muted">No scans yet.</p>
+        <p className="text-muted">Сканов пока нет.</p>
       ) : (
         <table className="table table-clickable">
           <thead>
             <tr>
               <th>ID</th>
-              <th>OCR Score</th>
-              <th>Confidence</th>
-              <th>Verified</th>
-              <th>Date</th>
+              <th>Балл OCR</th>
+              <th>Точность</th>
+              <th>Проверен</th>
+              <th>Дата</th>
             </tr>
           </thead>
           <tbody>
@@ -107,8 +107,8 @@ const ScansPage: React.FC = () => {
                     ? `${(scan.ocr_confidence * 100).toFixed(1)}%`
                     : '-'}
                 </td>
-                <td>{scan.verified_by ? 'Yes' : 'No'}</td>
-                <td>{new Date(scan.created_at).toLocaleDateString()}</td>
+                <td>{scan.verified_by ? 'Да' : 'Нет'}</td>
+                <td>{new Date(scan.created_at).toLocaleDateString('ru-RU')}</td>
               </tr>
             ))}
           </tbody>

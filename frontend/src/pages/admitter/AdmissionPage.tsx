@@ -36,14 +36,14 @@ const AdmissionPage: React.FC = () => {
     setScannedToken(data);
 
     try {
-      const { data: result } = await api.post<VerifyResponse>('/admission/verify', {
+      const { data: result } = await api.post<VerifyResponse>('admission/verify', {
         entry_token: data,
       });
       setVerifyData(result);
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
-        'Verification failed.';
+        'Ошибка проверки.';
       setError(message);
     } finally {
       setVerifying(false);
@@ -56,14 +56,14 @@ const AdmissionPage: React.FC = () => {
     setError(null);
 
     try {
-      const { data: result } = await api.post<ApproveResponse>('/admission/approve', {
+      const { data: result } = await api.post<ApproveResponse>('admission/approve', {
         registration_id: verifyData.registration_id,
       });
       setApproveData(result);
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
-        'Approval failed.';
+        'Ошибка подтверждения.';
       setError(message);
     } finally {
       setApproving(false);
@@ -80,16 +80,16 @@ const AdmissionPage: React.FC = () => {
 
   return (
     <Layout>
-      <h1 className="mb-24">Admission</h1>
+      <h1 className="mb-24">Допуск участников</h1>
 
       {error && <div className="alert alert-error mb-16">{error}</div>}
 
       {scanning && (
         <div className="card">
-          <h2 className="mb-16">Scan Entry QR Code</h2>
+          <h2 className="mb-16">Сканировать входной QR-код</h2>
           <QRScanner
             onScan={handleScan}
-            onError={(err) => console.error('QR Error:', err)}
+            onError={(err) => console.error('Ошибка QR:', err)}
           />
         </div>
       )}
@@ -98,11 +98,11 @@ const AdmissionPage: React.FC = () => {
 
       {verifyData && !approveData && (
         <div className="card">
-          <h2 className="mb-16">Participant Verification</h2>
+          <h2 className="mb-16">Проверка участника</h2>
           <table className="table mb-16">
             <tbody>
               <tr>
-                <td><strong>Name</strong></td>
+                <td><strong>ФИО</strong></td>
                 <td>{verifyData.participant_name}</td>
               </tr>
               <tr>
@@ -110,25 +110,25 @@ const AdmissionPage: React.FC = () => {
                 <td>{verifyData.email}</td>
               </tr>
               <tr>
-                <td><strong>Competition</strong></td>
+                <td><strong>Олимпиада</strong></td>
                 <td>{verifyData.competition_name}</td>
               </tr>
               <tr>
-                <td><strong>Status</strong></td>
+                <td><strong>Статус</strong></td>
                 <td>{verifyData.status}</td>
               </tr>
               <tr>
-                <td><strong>Token</strong></td>
+                <td><strong>Токен</strong></td>
                 <td style={{ fontSize: 12, wordBreak: 'break-all' }}>{scannedToken}</td>
               </tr>
             </tbody>
           </table>
           <div className="flex gap-8">
             <Button onClick={handleApprove} loading={approving}>
-              Approve Entry
+              Подтвердить допуск
             </Button>
             <Button variant="secondary" onClick={handleReset}>
-              Cancel
+              Отмена
             </Button>
           </div>
         </div>
@@ -137,9 +137,9 @@ const AdmissionPage: React.FC = () => {
       {approveData && (
         <div className="card">
           <div className="alert alert-success mb-16">
-            Entry approved successfully!
+            Участник успешно допущен!
           </div>
-          <h2 className="mb-16">Answer Sheet</h2>
+          <h2 className="mb-16">Бланк ответов</h2>
           <div className="mb-16">
             <a
               href={approveData.pdf_url}
@@ -148,17 +148,17 @@ const AdmissionPage: React.FC = () => {
               className="btn"
               style={{ display: 'inline-block', textDecoration: 'none' }}
             >
-              Download Answer Sheet PDF
+              Скачать бланк ответов PDF
             </a>
           </div>
-          <h3 className="mb-16">Sheet Token QR</h3>
+          <h3 className="mb-16">QR-код бланка</h3>
           <QRCodeDisplay value={approveData.sheet_token} size={200} />
           <p className="text-muted text-center mt-16" style={{ fontSize: 12, wordBreak: 'break-all' }}>
-            Sheet Token: {approveData.sheet_token}
+            Токен бланка: {approveData.sheet_token}
           </p>
           <div className="mt-16">
             <Button variant="secondary" onClick={handleReset}>
-              Scan Next
+              Следующий участник
             </Button>
           </div>
         </div>

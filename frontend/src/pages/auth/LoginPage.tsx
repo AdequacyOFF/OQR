@@ -8,8 +8,8 @@ import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
 
 const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(1, 'Password is required'),
+  email: z.string().email('Введите корректный email'),
+  password: z.string().min(1, 'Введите пароль'),
 });
 
 type LoginForm = z.infer<typeof loginSchema>;
@@ -46,7 +46,7 @@ const LoginPage: React.FC = () => {
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
-        'Login failed. Please check your credentials.';
+        'Ошибка входа. Проверьте email и пароль.';
       setError(message);
     } finally {
       setLoading(false);
@@ -56,29 +56,29 @@ const LoginPage: React.FC = () => {
   return (
     <div className="auth-wrapper">
       <div className="card auth-card">
-        <h1>Sign In</h1>
+        <h1>Вход в систему</h1>
         {error && <div className="alert alert-error">{error}</div>}
         <form onSubmit={handleSubmit(onSubmit)}>
           <Input
             label="Email"
             type="email"
-            placeholder="you@example.com"
+            placeholder="example@mail.ru"
             error={errors.email?.message}
             {...register('email')}
           />
           <Input
-            label="Password"
+            label="Пароль"
             type="password"
-            placeholder="Your password"
+            placeholder="Введите пароль"
             error={errors.password?.message}
             {...register('password')}
           />
           <Button type="submit" loading={loading} style={{ width: '100%' }}>
-            Sign In
+            Войти
           </Button>
         </form>
         <p className="text-center mt-16 text-muted">
-          Don't have an account? <Link to="/register">Register</Link>
+          Нет аккаунта? <Link to="/register">Зарегистрироваться</Link>
         </p>
       </div>
     </div>
