@@ -1,6 +1,7 @@
 """Registration API endpoints."""
 
 from typing import Annotated
+from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -131,4 +132,65 @@ async def get_my_registrations(
             for r in registrations
         ],
         total=len(registrations)
+    )
+
+
+@router.get("/{registration_id}", response_model=RegistrationResponse)
+async def get_registration(
+    registration_id: UUID,
+    current_user: Annotated[User, Depends(require_role(UserRole.PARTICIPANT))],
+    db: Annotated[AsyncSession, Depends(get_db)]
+):
+    """Get registration by ID.
+
+    Requires participant role.
+    User can only access their own registrations.
+    Returns entry_token if available.
+    """
+    # Get participant by user_id
+    participant_repo = ParticipantRepositoryImpl(db)
+    participant = await participant_repo.get_by_user_id(current_user.id)
+    if not participant:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Participant profile not found"
+        )
+
+    # Get registration
+    registration_repo = RegistrationRepositoryImpl(db)
+    registration = await registration_repo.get_by_id(registration_id)
+
+    if not registration:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Registration not found"
+        )
+
+    # Check ownership
+    if registration.participant_id != participant.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied"
+        )
+
+    # Get entry token if available
+    entry_token_repo = EntryTokenRepositoryImpl(db)
+    entry_token = await entry_token_repo.get_by_registration(registration_id)
+
+    # Use raw_token if available, otherwise fallback to registration_id
+    # (for backward compatibility with old registrations)
+    raw_token = None
+    if entry_token and entry_token.raw_token:
+        raw_token = entry_token.raw_token
+    else:
+        # Fallback to registration_id for old registrations
+        raw_token = str(registration.id)
+
+    return RegistrationResponse(
+        id=registration.id,
+        participant_id=registration.participant_id,
+        competition_id=registration.competition_id,
+        status=registration.status,
+        created_at=registration.created_at,
+        entry_token=raw_token
     )

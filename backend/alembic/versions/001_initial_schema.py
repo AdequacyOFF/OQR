@@ -152,31 +152,31 @@ def upgrade() -> None:
     op.create_index('ix_scans_uploaded_by', 'scans', ['uploaded_by'])
     op.create_index('ix_scans_attempt_created', 'scans', ['attempt_id', 'created_at'])
 
-    # Create audit_log table
-    op.create_table('audit_log',
+    # Create audit_logs table
+    op.create_table('audit_logs',
         sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=True),
-        sa.Column('entity_type', sa.String(50), nullable=False),
+        sa.Column('entity_type', sa.String(100), nullable=False),
         sa.Column('entity_id', postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column('action', sa.String(50), nullable=False),
+        sa.Column('action', sa.String(100), nullable=False),
         sa.Column('user_id', postgresql.UUID(as_uuid=True), nullable=True),
         sa.Column('ip_address', sa.String(45), nullable=True),
-        sa.Column('details', postgresql.JSONB(), nullable=False, server_default='{}'),
+        sa.Column('details', postgresql.JSONB(), nullable=True),
         sa.Column('timestamp', sa.DateTime(), nullable=False, server_default=sa.text('now()')),
         sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='SET NULL'),
     )
-    op.create_index('ix_audit_log_entity_type', 'audit_log', ['entity_type'])
-    op.create_index('ix_audit_log_entity_id', 'audit_log', ['entity_id'])
-    op.create_index('ix_audit_log_action', 'audit_log', ['action'])
-    op.create_index('ix_audit_log_user_id', 'audit_log', ['user_id'])
-    op.create_index('ix_audit_log_timestamp', 'audit_log', ['timestamp'], postgresql_ops={'timestamp': 'DESC'})
-    op.create_index('ix_audit_log_entity', 'audit_log', ['entity_type', 'entity_id'])
-    op.create_index('ix_audit_log_user_timestamp', 'audit_log', ['user_id', 'timestamp'])
-    op.create_index('ix_audit_log_action_timestamp', 'audit_log', ['action', 'timestamp'])
+    op.create_index('ix_audit_logs_entity_type', 'audit_logs', ['entity_type'])
+    op.create_index('ix_audit_logs_entity_id', 'audit_logs', ['entity_id'])
+    op.create_index('ix_audit_logs_action', 'audit_logs', ['action'])
+    op.create_index('ix_audit_logs_user_id', 'audit_logs', ['user_id'])
+    op.create_index('ix_audit_logs_timestamp', 'audit_logs', ['timestamp'], postgresql_ops={'timestamp': 'DESC'})
+    op.create_index('ix_audit_logs_entity', 'audit_logs', ['entity_type', 'entity_id'])
+    op.create_index('ix_audit_logs_user_timestamp', 'audit_logs', ['user_id', 'timestamp'])
+    op.create_index('ix_audit_logs_action_timestamp', 'audit_logs', ['action', 'timestamp'])
 
 
 def downgrade() -> None:
     # Drop tables in reverse order
-    op.drop_table('audit_log')
+    op.drop_table('audit_logs')
     op.drop_table('scans')
     op.drop_table('attempts')
     op.drop_table('entry_tokens')

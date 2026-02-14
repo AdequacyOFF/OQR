@@ -71,7 +71,7 @@ const CompetitionsAdminPage: React.FC = () => {
   const openEdit = (comp: Competition) => {
     setEditingId(comp.id);
     setValue('name', comp.name);
-    setValue('date', comp.date.slice(0, 16));
+    setValue('date', comp.date.slice(0, 10));
     setValue('registration_start', comp.registration_start.slice(0, 16));
     setValue('registration_end', comp.registration_end.slice(0, 16));
     setValue('variants_count', comp.variants_count);
@@ -102,9 +102,9 @@ const CompetitionsAdminPage: React.FC = () => {
     }
   };
 
-  const handleStatusChange = async (id: string, status: string) => {
+  const handleStatusChange = async (id: string, action: string) => {
     try {
-      await api.put(`competitions/${id}`, { status });
+      await api.post(`competitions/${id}/${action}`);
       await loadCompetitions();
     } catch {
       setError('Не удалось обновить статус.');
@@ -116,7 +116,7 @@ const CompetitionsAdminPage: React.FC = () => {
       draft: 'Черновик',
       registration_open: 'Регистрация открыта',
       in_progress: 'Проходит',
-      finished: 'Завершена',
+      checking: 'Проверка',
       published: 'Опубликована',
     };
     return labels[status] || status;
@@ -177,7 +177,7 @@ const CompetitionsAdminPage: React.FC = () => {
                     {comp.status === 'draft' && (
                       <Button
                         className="btn-sm"
-                        onClick={() => handleStatusChange(comp.id, 'registration_open')}
+                        onClick={() => handleStatusChange(comp.id, 'open-registration')}
                       >
                         Открыть рег.
                       </Button>
@@ -186,7 +186,7 @@ const CompetitionsAdminPage: React.FC = () => {
                       <Button
                         variant="secondary"
                         className="btn-sm"
-                        onClick={() => handleStatusChange(comp.id, 'in_progress')}
+                        onClick={() => handleStatusChange(comp.id, 'start')}
                       >
                         Начать
                       </Button>
@@ -195,9 +195,18 @@ const CompetitionsAdminPage: React.FC = () => {
                       <Button
                         variant="danger"
                         className="btn-sm"
-                        onClick={() => handleStatusChange(comp.id, 'finished')}
+                        onClick={() => handleStatusChange(comp.id, 'start-checking')}
                       >
                         Завершить
+                      </Button>
+                    )}
+                    {comp.status === 'checking' && (
+                      <Button
+                        variant="success"
+                        className="btn-sm"
+                        onClick={() => handleStatusChange(comp.id, 'publish')}
+                      >
+                        Опубликовать
                       </Button>
                     )}
                   </div>
@@ -225,7 +234,7 @@ const CompetitionsAdminPage: React.FC = () => {
           />
           <Input
             label="Дата проведения"
-            type="datetime-local"
+            type="date"
             error={errors.date?.message}
             {...register('date')}
           />

@@ -7,13 +7,12 @@ from ...domain.value_objects import UserRole
 
 
 class RegisterRequest(BaseModel):
-    """Request schema for user registration."""
+    """Request schema for user registration (participant only)."""
     email: EmailStr
     password: str = Field(..., min_length=8, description="Password must be at least 8 characters")
-    role: UserRole
-    full_name: str | None = Field(None, min_length=2, description="Required for participants")
-    school: str | None = Field(None, min_length=2, description="Required for participants")
-    grade: int | None = Field(None, ge=1, le=12, description="Required for participants (1-12)")
+    full_name: str = Field(..., min_length=2, description="Full name (required)")
+    school: str = Field(..., min_length=2, description="School name (required)")
+    grade: int = Field(..., ge=1, le=12, description="Grade 1-12 (required)")
 
     @field_validator("password")
     @classmethod

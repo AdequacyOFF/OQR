@@ -23,7 +23,9 @@ from olimpqr.domain.value_objects import UserRole
 from olimpqr.infrastructure.database.models import (
     AttemptModel,
     RegistrationModel,
+    UserModel,
 )
+from olimpqr.infrastructure.security import hash_password
 
 
 @pytest.mark.e2e
@@ -33,32 +35,39 @@ class TestFullCompetitionWorkflow:
     async def test_complete_workflow(self, client: AsyncClient, db_session):
         """Test the entire competition lifecycle from start to published results."""
 
-        # ── Step 1: Register admin ──
-        admin_reg = await client.post(
-            "/api/v1/auth/register",
-            json={
-                "email": "workflow_admin@test.com",
-                "password": "adminpass123",
-                "role": "admin",
-            },
+        # ── Step 1: Create admin user (mimicking init_admin.py) ──
+        admin_user = UserModel(
+            id=uuid4(),
+            email="workflow_admin@test.com",
+            password_hash=hash_password("adminpass123"),
+            role=UserRole.ADMIN,
+            is_active=True
         )
-        assert admin_reg.status_code == 201
-        admin_token = admin_reg.json()["access_token"]
+        db_session.add(admin_user)
+        await db_session.commit()
+
+        # Login as admin
+        admin_login = await client.post(
+            "/api/v1/auth/login",
+            json={"email": "workflow_admin@test.com", "password": "adminpass123"}
+        )
+        assert admin_login.status_code == 200
+        admin_token = admin_login.json()["access_token"]
         admin_headers = {"Authorization": f"Bearer {admin_token}"}
 
-        # ── Step 2: Register participant ──
+        # ── Step 2: Register participant (new flow without role) ──
         part_reg = await client.post(
             "/api/v1/auth/register",
             json={
                 "email": "workflow_part@test.com",
                 "password": "partpass123",
-                "role": "participant",
                 "full_name": "Workflow Participant",
                 "school": "Test School #42",
                 "grade": 11,
             },
         )
         assert part_reg.status_code == 201
+        assert part_reg.json()["role"] == "participant"  # Verify auto-assigned role
         part_token = part_reg.json()["access_token"]
         part_headers = {"Authorization": f"Bearer {part_token}"}
 
@@ -242,22 +251,27 @@ class TestFullCompetitionWorkflow:
         """Entry token can only be used once for admission."""
 
         # Setup: admin + participant + competition + registration
-        admin_reg = await client.post(
-            "/api/v1/auth/register",
-            json={
-                "email": "single_use_admin@test.com",
-                "password": "adminpass123",
-                "role": "admin",
-            },
+        admin_user = UserModel(
+            id=uuid4(),
+            email="single_use_admin@test.com",
+            password_hash=hash_password("adminpass123"),
+            role=UserRole.ADMIN,
+            is_active=True
         )
-        admin_headers = {"Authorization": f"Bearer {admin_reg.json()['access_token']}"}
+        db_session.add(admin_user)
+        await db_session.commit()
+
+        admin_login = await client.post(
+            "/api/v1/auth/login",
+            json={"email": "single_use_admin@test.com", "password": "adminpass123"}
+        )
+        admin_headers = {"Authorization": f"Bearer {admin_login.json()['access_token']}"}
 
         part_reg = await client.post(
             "/api/v1/auth/register",
             json={
                 "email": "single_use_part@test.com",
                 "password": "partpass123",
-                "role": "participant",
                 "full_name": "Single Use Test",
                 "school": "Test School",
                 "grade": 10,
@@ -339,15 +353,21 @@ class TestFullCompetitionWorkflow:
     async def test_verify_expired_token_rejected(self, client: AsyncClient, db_session):
         """Verify should reject expired entry tokens."""
 
-        admin_reg = await client.post(
-            "/api/v1/auth/register",
-            json={
-                "email": "expired_admin@test.com",
-                "password": "adminpass123",
-                "role": "admin",
-            },
+        admin_user = UserModel(
+            id=uuid4(),
+            email="expired_admin@test.com",
+            password_hash=hash_password("adminpass123"),
+            role=UserRole.ADMIN,
+            is_active=True
         )
-        admin_headers = {"Authorization": f"Bearer {admin_reg.json()['access_token']}"}
+        db_session.add(admin_user)
+        await db_session.commit()
+
+        admin_login = await client.post(
+            "/api/v1/auth/login",
+            json={"email": "expired_admin@test.com", "password": "adminpass123"}
+        )
+        admin_headers = {"Authorization": f"Bearer {admin_login.json()['access_token']}"}
 
         # Verify with a fake token that doesn't exist
         verify_resp = await client.post(

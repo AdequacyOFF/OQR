@@ -10,12 +10,9 @@ import Button from '../../components/common/Button';
 const registerSchema = z.object({
   email: z.string().email('Введите корректный email'),
   password: z.string().min(6, 'Пароль должен содержать минимум 6 символов'),
-  role: z.enum(['participant', 'admitter', 'scanner', 'admin'], {
-    required_error: 'Выберите роль',
-  }),
   full_name: z.string().min(1, 'Введите ФИО'),
-  school: z.string().optional(),
-  grade: z.coerce.number().min(1).max(12).optional(),
+  school: z.string().min(1, 'Введите название школы'),
+  grade: z.coerce.number().min(1, 'Минимум 1').max(12, 'Максимум 12'),
 });
 
 type RegisterForm = z.infer<typeof registerSchema>;
@@ -36,16 +33,10 @@ const RegisterPage: React.FC = () => {
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors },
   } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
-    defaultValues: {
-      role: 'participant',
-    },
   });
-
-  const selectedRole = watch('role');
 
   const onSubmit = async (data: RegisterForm) => {
     setError(null);
@@ -54,7 +45,7 @@ const RegisterPage: React.FC = () => {
       await registerUser({
         email: data.email,
         password: data.password,
-        role: data.role,
+        role: 'participant',
         full_name: data.full_name,
         school: data.school,
         grade: data.grade,
@@ -98,39 +89,21 @@ const RegisterPage: React.FC = () => {
             error={errors.password?.message}
             {...register('password')}
           />
-          <div className="form-group">
-            <label htmlFor="role">Роль</label>
-            <select
-              id="role"
-              className="input"
-              {...register('role')}
-            >
-              <option value="participant">Участник</option>
-              <option value="admitter">Допуск</option>
-              <option value="scanner">Сканер</option>
-              <option value="admin">Администратор</option>
-            </select>
-            {errors.role && <p className="error-text">{errors.role.message}</p>}
-          </div>
-          {selectedRole === 'participant' && (
-            <>
-              <Input
-                label="Школа"
-                placeholder="Название школы"
-                error={errors.school?.message}
-                {...register('school')}
-              />
-              <Input
-                label="Класс"
-                type="number"
-                placeholder="1-12"
-                min={1}
-                max={12}
-                error={errors.grade?.message}
-                {...register('grade')}
-              />
-            </>
-          )}
+          <Input
+            label="Школа"
+            placeholder="Название школы"
+            error={errors.school?.message}
+            {...register('school')}
+          />
+          <Input
+            label="Класс"
+            type="number"
+            placeholder="1-12"
+            min={1}
+            max={12}
+            error={errors.grade?.message}
+            {...register('grade')}
+          />
           <Button type="submit" loading={loading} style={{ width: '100%' }}>
             Зарегистрироваться
           </Button>

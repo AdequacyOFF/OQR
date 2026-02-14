@@ -95,6 +95,8 @@ class RegisterForCompetitionUseCase:
             registration_id=registration.id,
             expire_hours=settings.entry_token_expire_hours
         )
+        # Store raw token for later retrieval
+        entry_token.raw_token = token.raw
         await self.entry_token_repository.create(entry_token)
 
         return RegisterForCompetitionResult(

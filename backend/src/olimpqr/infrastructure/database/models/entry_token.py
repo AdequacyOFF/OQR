@@ -29,6 +29,10 @@ class EntryTokenModel(Base):
         unique=True,
         index=True
     )
+    raw_token: Mapped[Optional[str]] = mapped_column(
+        String(64),
+        nullable=True
+    )
     registration_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("registrations.id", ondelete="CASCADE"),
         nullable=False,

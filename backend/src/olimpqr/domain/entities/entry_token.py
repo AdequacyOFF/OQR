@@ -11,12 +11,13 @@ from ..value_objects import TokenHash
 class EntryToken:
     """Entry token entity - for admission QR codes.
 
-    Only the token hash is stored, never the raw token value.
-    The raw token is embedded in the QR code shown to participants.
+    The raw token is now stored to allow participants to retrieve their QR code.
+    The token hash is used for verification.
 
     Attributes:
         id: Unique identifier
         token_hash: HMAC-SHA256 hash of the token
+        raw_token: Raw token value (optional for backward compatibility)
         registration_id: Reference to Registration
         expires_at: When token expires
         used_at: When token was used (None if not used yet)
@@ -26,6 +27,7 @@ class EntryToken:
     registration_id: UUID
     expires_at: datetime
     id: UUID = field(default_factory=uuid4)
+    raw_token: str | None = None
     used_at: datetime | None = None
     created_at: datetime = field(default_factory=datetime.utcnow)
 

@@ -22,6 +22,7 @@ class EntryTokenRepositoryImpl(EntryTokenRepository):
         model = EntryTokenModel(
             id=entity.id,
             token_hash=entity.token_hash.value,
+            raw_token=entity.raw_token,
             registration_id=entity.registration_id,
             expires_at=entity.expires_at,
             used_at=entity.used_at,
@@ -105,6 +106,7 @@ class EntryTokenRepositoryImpl(EntryTokenRepository):
         return EntryToken(
             id=model.id,
             token_hash=TokenHash(value=model.token_hash),
+            raw_token=model.raw_token,
             registration_id=model.registration_id,
             expires_at=model.expires_at,
             used_at=model.used_at,

@@ -28,6 +28,9 @@ import CompetitionsAdminPage from '../pages/admin/CompetitionsAdminPage';
 // Public pages
 import ResultsPage from '../pages/public/ResultsPage';
 
+// Test pages (development only)
+import CameraTestPage from '../pages/test/CameraTestPage';
+
 interface ProtectedRouteProps {
   children: React.ReactNode;
   allowedRoles?: UserRole[];
@@ -66,6 +69,9 @@ const AppRouter: React.FC = () => {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/results/:competitionId" element={<ResultsPage />} />
+
+        {/* Test routes (development only) */}
+        <Route path="/test/camera" element={<CameraTestPage />} />
 
         {/* Participant routes */}
         <Route

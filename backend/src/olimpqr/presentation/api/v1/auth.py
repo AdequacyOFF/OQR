@@ -25,14 +25,16 @@ async def register(
     body: RegisterRequest,
     db: Annotated[AsyncSession, Depends(get_db)]
 ):
-    """Register a new user.
+    """Register a new participant user.
+
+    Public registration is only available for participants.
+    Staff users (admitter, scanner, admin) must be created by admins.
 
     - **email**: User email (must be unique)
     - **password**: Password (min 8 characters)
-    - **role**: User role (participant, admitter, scanner, admin)
-    - **full_name**: Full name (required for participants)
-    - **school**: School name (required for participants)
-    - **grade**: School grade 1-12 (required for participants)
+    - **full_name**: Full name (required)
+    - **school**: School name (required)
+    - **grade**: School grade 1-12 (required)
 
     Returns JWT access token and user information.
     Rate limited to 3 requests per minute.
@@ -45,11 +47,12 @@ async def register(
         # Create use case
         use_case = RegisterUserUseCase(user_repository, participant_repository)
 
-        # Create DTO
+        # Create DTO - role is always PARTICIPANT for public registration
+        from ....domain.value_objects import UserRole
         dto = RegisterUserDTO(
             email=body.email,
             password=body.password,
-            role=body.role,
+            role=UserRole.PARTICIPANT,
             full_name=body.full_name,
             school=body.school,
             grade=body.grade

@@ -78,12 +78,13 @@ class Competition:
 
     @property
     def is_registration_open(self) -> bool:
-        """Check if registration is currently open."""
-        now = datetime.utcnow()
-        return (
-            self.status == CompetitionStatus.REGISTRATION_OPEN
-            and self.registration_start <= now <= self.registration_end
-        )
+        """Check if registration is currently open.
+
+        Registration is open if the status is REGISTRATION_OPEN.
+        The admin controls this status manually, so time-based checks
+        are not enforced here.
+        """
+        return self.status == CompetitionStatus.REGISTRATION_OPEN
 
     @property
     def is_in_progress(self) -> bool:
