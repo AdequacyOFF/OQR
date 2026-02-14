@@ -1,8 +1,38 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../../components/layout/Layout';
+import Spinner from '../../components/common/Spinner';
+import api from '../../api/client';
+
+interface Statistics {
+  total_competitions: number;
+  total_users: number;
+  total_scans: number;
+  total_registrations: number;
+  total_participants: number;
+}
 
 const AdminDashboardPage: React.FC = () => {
+  const [stats, setStats] = useState<Statistics | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadStatistics();
+  }, []);
+
+  const loadStatistics = async () => {
+    try {
+      const { data } = await api.get<Statistics>('admin/statistics');
+      setStats(data);
+    } catch (err) {
+      setError('Не удалось загрузить статистику');
+      console.error('Failed to load statistics:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Layout>
       <h1 className="mb-24">Панель администратора</h1>
@@ -29,20 +59,27 @@ const AdminDashboardPage: React.FC = () => {
 
       <div className="card mt-16">
         <h2 className="mb-16">Краткая статистика</h2>
-        <div className="grid grid-3">
-          <div className="text-center">
-            <p className="text-muted">Всего олимпиад</p>
-            <p style={{ fontSize: 28, fontWeight: 700 }}>--</p>
+        {error && <div className="alert alert-error mb-16">{error}</div>}
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '20px' }}>
+            <Spinner />
           </div>
-          <div className="text-center">
-            <p className="text-muted">Всего пользователей</p>
-            <p style={{ fontSize: 28, fontWeight: 700 }}>--</p>
+        ) : (
+          <div className="grid grid-3">
+            <div className="text-center">
+              <p className="text-muted">Всего олимпиад</p>
+              <p style={{ fontSize: 28, fontWeight: 700 }}>{stats?.total_competitions ?? 0}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-muted">Всего пользователей</p>
+              <p style={{ fontSize: 28, fontWeight: 700 }}>{stats?.total_users ?? 0}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-muted">Всего сканов</p>
+              <p style={{ fontSize: 28, fontWeight: 700 }}>{stats?.total_scans ?? 0}</p>
+            </div>
           </div>
-          <div className="text-center">
-            <p className="text-muted">Всего сканов</p>
-            <p style={{ fontSize: 28, fontWeight: 700 }}>--</p>
-          </div>
-        </div>
+        )}
       </div>
     </Layout>
   );

@@ -73,6 +73,7 @@ services:
       - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production-at-least-32-chars}
       - HMAC_SECRET_KEY=${HMAC_SECRET_KEY:-dev-hmac-secret-key-change-in-production-32ch}
       - MINIO_ENDPOINT=${MINIO_ENDPOINT:-minio:9000}
+      - MINIO_PUBLIC_ENDPOINT=${MINIO_PUBLIC_ENDPOINT:-localhost:9000}
       - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-minioadmin}
       - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-minioadmin}
       - MINIO_SECURE=${MINIO_SECURE:-false}
@@ -107,6 +108,7 @@ services:
       - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production-at-least-32-chars}
       - HMAC_SECRET_KEY=${HMAC_SECRET_KEY:-dev-hmac-secret-key-change-in-production-32ch}
       - MINIO_ENDPOINT=${MINIO_ENDPOINT:-minio:9000}
+      - MINIO_PUBLIC_ENDPOINT=${MINIO_PUBLIC_ENDPOINT:-localhost:9000}
       - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-minioadmin}
       - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-minioadmin}
       - MINIO_SECURE=${MINIO_SECURE:-false}

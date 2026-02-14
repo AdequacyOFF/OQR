@@ -123,6 +123,11 @@ class MinIOStorage:
             object_name,
             expires=timedelta(seconds=expires_seconds)
         )
+
+        # Replace internal Docker endpoint with public endpoint for browser access
+        if settings.minio_public_endpoint:
+            url = url.replace(settings.minio_endpoint, settings.minio_public_endpoint)
+
         return url
 
     def delete_file(self, bucket: str, object_name: str):

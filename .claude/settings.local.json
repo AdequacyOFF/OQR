@@ -24,7 +24,10 @@
       "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjOWEyNDVhNy1iOTYxLTQ2YjYtYmU3ZC1iMWRjMDgzOTc5NzIiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJyb2xlIjoicGFydGljaXBhbnQiLCJleHAiOjE3NzExNTU0NDQsImlhdCI6MTc3MTA2OTA0NH0.1v9NTYhsGKI64Ft3DBN6JvWtGv9MCCVJGP-l08gQeqw\" echo \"=== Testing /competitions ===\" curl -s http://localhost:8000/api/v1/competitions -H \"Authorization: Bearer $TOKEN\")",
       "Bash(docker-compose restart:*)",
       "Bash(npm run lint:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(python -c:*)",
+      "Bash(chmod:*)",
+      "Bash(docker-compose down:*)"
     ],
     "deny": [],
     "ask": []

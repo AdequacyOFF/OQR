@@ -9,15 +9,19 @@ import Spinner from '../../components/common/Spinner';
 interface VerifyResponse {
   registration_id: string;
   participant_name: string;
-  email: string;
+  participant_school: string;
+  participant_grade: number;
   competition_name: string;
-  status: string;
+  competition_id: string;
+  can_proceed: boolean;
+  message: string;
 }
 
 interface ApproveResponse {
   attempt_id: string;
-  sheet_token: string;
+  variant_number: number;
   pdf_url: string;
+  sheet_token: string;
 }
 
 const AdmissionPage: React.FC = () => {
@@ -37,7 +41,7 @@ const AdmissionPage: React.FC = () => {
 
     try {
       const { data: result } = await api.post<VerifyResponse>('admission/verify', {
-        entry_token: data,
+        token: data,
       });
       setVerifyData(result);
     } catch (err: unknown) {
@@ -51,14 +55,17 @@ const AdmissionPage: React.FC = () => {
   };
 
   const handleApprove = async () => {
-    if (!verifyData) return;
+    if (!verifyData || !scannedToken) return;
     setApproving(true);
     setError(null);
 
     try {
-      const { data: result } = await api.post<ApproveResponse>('admission/approve', {
-        registration_id: verifyData.registration_id,
-      });
+      const { data: result } = await api.post<ApproveResponse>(
+        `admission/${verifyData.registration_id}/approve`,
+        {
+          raw_entry_token: scannedToken,
+        }
+      );
       setApproveData(result);
     } catch (err: unknown) {
       const message =
@@ -99,6 +106,13 @@ const AdmissionPage: React.FC = () => {
       {verifyData && !approveData && (
         <div className="card">
           <h2 className="mb-16">Проверка участника</h2>
+
+          {!verifyData.can_proceed && (
+            <div className="alert alert-error mb-16">
+              {verifyData.message}
+            </div>
+          )}
+
           <table className="table mb-16">
             <tbody>
               <tr>
@@ -106,8 +120,12 @@ const AdmissionPage: React.FC = () => {
                 <td>{verifyData.participant_name}</td>
               </tr>
               <tr>
-                <td><strong>Email</strong></td>
-                <td>{verifyData.email}</td>
+                <td><strong>Школа</strong></td>
+                <td>{verifyData.participant_school}</td>
+              </tr>
+              <tr>
+                <td><strong>Класс</strong></td>
+                <td>{verifyData.participant_grade}</td>
               </tr>
               <tr>
                 <td><strong>Олимпиада</strong></td>
@@ -115,16 +133,16 @@ const AdmissionPage: React.FC = () => {
               </tr>
               <tr>
                 <td><strong>Статус</strong></td>
-                <td>{verifyData.status}</td>
-              </tr>
-              <tr>
-                <td><strong>Токен</strong></td>
-                <td style={{ fontSize: 12, wordBreak: 'break-all' }}>{scannedToken}</td>
+                <td>{verifyData.message}</td>
               </tr>
             </tbody>
           </table>
           <div className="flex gap-8">
-            <Button onClick={handleApprove} loading={approving}>
+            <Button
+              onClick={handleApprove}
+              loading={approving}
+              disabled={!verifyData.can_proceed}
+            >
               Подтвердить допуск
             </Button>
             <Button variant="secondary" onClick={handleReset}>

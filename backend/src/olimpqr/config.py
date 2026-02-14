@@ -35,6 +35,7 @@ class Settings(BaseSettings):
 
     # MinIO
     minio_endpoint: str = Field(..., description="MinIO endpoint (host:port)")
+    minio_public_endpoint: str = Field(default="", description="MinIO public endpoint for browser access")
     minio_access_key: str = Field(..., description="MinIO access key")
     minio_secret_key: str = Field(..., description="MinIO secret key")
     minio_secure: bool = Field(default=False, description="Use HTTPS for MinIO")

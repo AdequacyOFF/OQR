@@ -14,7 +14,18 @@ const createUserSchema = z.object({
   email: z.string().email('Введите корректный email'),
   password: z.string().min(6, 'Минимум 6 символов'),
   role: z.enum(['participant', 'admitter', 'scanner', 'admin']),
-  full_name: z.string().min(1, 'Обязательное поле'),
+  full_name: z.string().min(2, 'Минимум 2 символа').optional(),
+  school: z.string().min(2, 'Минимум 2 символа').optional(),
+  grade: z.number().min(1, 'Класс от 1 до 12').max(12, 'Класс от 1 до 12').optional(),
+}).refine((data) => {
+  // For participants, full_name, school, and grade are required
+  if (data.role === 'participant') {
+    return data.full_name && data.school && data.grade;
+  }
+  return true;
+}, {
+  message: 'Для участников необходимо указать ФИО, школу и класс',
+  path: ['full_name'],
 });
 
 type CreateUserForm = z.infer<typeof createUserSchema>;
@@ -30,11 +41,14 @@ const UsersPage: React.FC = () => {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm<CreateUserForm>({
     resolver: zodResolver(createUserSchema),
     defaultValues: { role: 'participant' },
   });
+
+  const selectedRole = watch('role');
 
   useEffect(() => {
     loadUsers();
@@ -56,7 +70,21 @@ const UsersPage: React.FC = () => {
     setCreating(true);
     setError(null);
     try {
-      await api.post('admin/users', data);
+      // Clean data - remove participant fields for non-participant roles
+      const cleanData: any = {
+        email: data.email,
+        password: data.password,
+        role: data.role,
+      };
+
+      // Only include participant fields if role is participant
+      if (data.role === 'participant') {
+        cleanData.full_name = data.full_name;
+        cleanData.school = data.school;
+        cleanData.grade = data.grade;
+      }
+
+      await api.post('admin/users', cleanData);
       setModalOpen(false);
       reset();
       await loadUsers();
@@ -147,11 +175,6 @@ const UsersPage: React.FC = () => {
       >
         <form onSubmit={handleSubmit(handleCreate)}>
           <Input
-            label="ФИО"
-            error={errors.full_name?.message}
-            {...register('full_name')}
-          />
-          <Input
             label="Email"
             type="email"
             error={errors.email?.message}
@@ -173,6 +196,28 @@ const UsersPage: React.FC = () => {
             </select>
             {errors.role && <p className="error-text">{errors.role.message}</p>}
           </div>
+
+          {selectedRole === 'participant' && (
+            <>
+              <Input
+                label="ФИО *"
+                error={errors.full_name?.message}
+                {...register('full_name')}
+              />
+              <Input
+                label="Школа *"
+                error={errors.school?.message}
+                {...register('school')}
+              />
+              <Input
+                label="Класс (1-12) *"
+                type="number"
+                error={errors.grade?.message}
+                {...register('grade', { valueAsNumber: true })}
+              />
+            </>
+          )}
+
           <Button type="submit" loading={creating} style={{ width: '100%' }}>
             Создать
           </Button>

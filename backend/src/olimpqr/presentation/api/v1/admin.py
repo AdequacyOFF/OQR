@@ -9,6 +9,10 @@ from ....infrastructure.database import get_db
 from ....infrastructure.repositories import (
     UserRepositoryImpl,
     AuditLogRepositoryImpl,
+    CompetitionRepositoryImpl,
+    ScanRepositoryImpl,
+    RegistrationRepositoryImpl,
+    ParticipantRepositoryImpl,
 )
 from ....infrastructure.security import hash_password
 from ....domain.entities import User
@@ -20,6 +24,7 @@ from ...schemas.admin_schemas import (
     AdminUserResponse,
     AuditLogEntry,
     AuditLogListResponse,
+    StatisticsResponse,
 )
 from ...dependencies import require_role
 
@@ -63,11 +68,20 @@ async def create_staff_user(
     current_user: User = Depends(require_role(UserRole.ADMIN)),
     db: AsyncSession = Depends(get_db),
 ):
-    """Create a staff user account (admitter / scanner / admin)."""
+    """Create a user account (participant / admitter / scanner / admin)."""
     user_repo = UserRepositoryImpl(db)
 
     if await user_repo.exists_by_email(body.email):
         raise HTTPException(status_code=400, detail="Email already in use")
+
+    # Validate participant-specific fields
+    if body.role == UserRole.PARTICIPANT:
+        if not body.full_name or len(body.full_name.strip()) < 2:
+            raise HTTPException(status_code=400, detail="Full name is required for participants (min 2 characters)")
+        if not body.school or len(body.school.strip()) < 2:
+            raise HTTPException(status_code=400, detail="School is required for participants (min 2 characters)")
+        if body.grade is None or not (1 <= body.grade <= 12):
+            raise HTTPException(status_code=400, detail="Grade is required for participants (1-12)")
 
     from uuid import uuid4
 
@@ -78,6 +92,20 @@ async def create_staff_user(
         role=body.role,
     )
     user = await user_repo.create(user)
+
+    # Create participant profile if role is participant
+    if body.role == UserRole.PARTICIPANT:
+        from ....domain.entities import Participant
+        participant_repo = ParticipantRepositoryImpl(db)
+
+        participant = Participant(
+            id=uuid4(),
+            user_id=user.id,
+            full_name=body.full_name,
+            school=body.school,
+            grade=body.grade,
+        )
+        await participant_repo.create(participant)
 
     return AdminUserResponse(
         id=user.id,
@@ -176,3 +204,49 @@ async def list_audit_log(
         for log in logs
     ]
     return AuditLogListResponse(items=items, total=len(items))
+
+
+# --- Statistics ---
+
+@router.get("/statistics", response_model=StatisticsResponse)
+async def get_statistics(
+    current_user: User = Depends(require_role(UserRole.ADMIN)),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get system statistics for admin dashboard."""
+    from sqlalchemy import select, func
+    from ....infrastructure.database.models import (
+        UserModel,
+        CompetitionModel,
+        ScanModel,
+        RegistrationModel,
+        ParticipantModel,
+    )
+
+    # Count users
+    result = await db.execute(select(func.count()).select_from(UserModel))
+    total_users = result.scalar() or 0
+
+    # Count competitions
+    result = await db.execute(select(func.count()).select_from(CompetitionModel))
+    total_competitions = result.scalar() or 0
+
+    # Count scans
+    result = await db.execute(select(func.count()).select_from(ScanModel))
+    total_scans = result.scalar() or 0
+
+    # Count registrations
+    result = await db.execute(select(func.count()).select_from(RegistrationModel))
+    total_registrations = result.scalar() or 0
+
+    # Count participants
+    result = await db.execute(select(func.count()).select_from(ParticipantModel))
+    total_participants = result.scalar() or 0
+
+    return StatisticsResponse(
+        total_competitions=total_competitions,
+        total_users=total_users,
+        total_scans=total_scans,
+        total_registrations=total_registrations,
+        total_participants=total_participants,
+    )

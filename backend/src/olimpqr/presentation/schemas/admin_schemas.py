@@ -9,10 +9,13 @@ from ...domain.value_objects import UserRole
 
 
 class CreateStaffRequest(BaseModel):
-    """Create a staff user (admitter / scanner / admin)."""
+    """Create a staff user (admitter / scanner / admin / participant)."""
     email: EmailStr
     password: str = Field(..., min_length=8)
     role: UserRole
+    full_name: Optional[str] = None
+    school: Optional[str] = None
+    grade: Optional[int] = Field(None, ge=1, le=12)
 
 
 class UpdateUserRequest(BaseModel):
@@ -54,3 +57,12 @@ class AuditLogListResponse(BaseModel):
     """Paginated list of audit log entries."""
     items: list[AuditLogEntry]
     total: int
+
+
+class StatisticsResponse(BaseModel):
+    """System statistics for admin dashboard."""
+    total_competitions: int
+    total_users: int
+    total_scans: int
+    total_registrations: int
+    total_participants: int
