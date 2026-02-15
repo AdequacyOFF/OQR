@@ -12,19 +12,30 @@ import Spinner from '../../components/common/Spinner';
 
 const createUserSchema = z.object({
   email: z.string().email('Введите корректный email'),
-  password: z.string().min(6, 'Минимум 6 символов'),
+  password: z.string().min(8, 'Минимум 8 символов'),
   role: z.enum(['participant', 'admitter', 'scanner', 'admin']),
-  full_name: z.string().min(2, 'Минимум 2 символа').optional(),
-  school: z.string().min(2, 'Минимум 2 символа').optional(),
-  grade: z.number().min(1, 'Класс от 1 до 12').max(12, 'Класс от 1 до 12').optional(),
+  full_name: z.string().optional(),
+  school: z.string().optional(),
+  grade: z.preprocess(
+    (val) => (typeof val === 'number' && isNaN(val) ? undefined : val),
+    z.number().optional()
+  ),
 }).refine((data) => {
   // For participants, full_name, school, and grade are required
   if (data.role === 'participant') {
-    return data.full_name && data.school && data.grade;
+    if (!data.full_name || data.full_name.trim().length < 2) {
+      return false;
+    }
+    if (!data.school || data.school.trim().length < 2) {
+      return false;
+    }
+    if (!data.grade || data.grade < 1 || data.grade > 12) {
+      return false;
+    }
   }
   return true;
 }, {
-  message: 'Для участников необходимо указать ФИО, школу и класс',
+  message: 'Для участників необходимо указать ФИО, школу и класс (минимум 2 символа для текста, класс 1-12)',
   path: ['full_name'],
 });
 
@@ -67,6 +78,7 @@ const UsersPage: React.FC = () => {
   };
 
   const handleCreate = async (data: CreateUserForm) => {
+    console.log('handleCreate called with data:', data);
     setCreating(true);
     setError(null);
     try {
@@ -84,14 +96,18 @@ const UsersPage: React.FC = () => {
         cleanData.grade = data.grade;
       }
 
-      await api.post('admin/users', cleanData);
+      console.log('Sending request with cleanData:', cleanData);
+      const response = await api.post('admin/users', cleanData);
+      console.log('User created successfully:', response.data);
       setModalOpen(false);
       reset();
       await loadUsers();
     } catch (err: unknown) {
+      console.error('Error creating user:', err);
       const message =
         (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
         'Не удалось создать пользователя.';
+      console.error('Error message:', message);
       setError(message);
     } finally {
       setCreating(false);
@@ -173,7 +189,10 @@ const UsersPage: React.FC = () => {
         }}
         title="Создать пользователя"
       >
-        <form onSubmit={handleSubmit(handleCreate)}>
+        <form onSubmit={handleSubmit(handleCreate, (errors) => {
+          console.error('Form validation errors:', errors);
+        })}>
+          {error && <div className="alert alert-error mb-16">{error}</div>}
           <Input
             label="Email"
             type="email"
