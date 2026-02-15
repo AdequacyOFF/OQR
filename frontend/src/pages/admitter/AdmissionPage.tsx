@@ -28,6 +28,7 @@ const AdmissionPage: React.FC = () => {
   const [scanning, setScanning] = useState(true);
   const [verifying, setVerifying] = useState(false);
   const [approving, setApproving] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [verifyData, setVerifyData] = useState<VerifyResponse | null>(null);
   const [approveData, setApproveData] = useState<ApproveResponse | null>(null);
@@ -83,6 +84,37 @@ const AdmissionPage: React.FC = () => {
     setApproveData(null);
     setError(null);
     setScannedToken(null);
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!approveData) return;
+    setDownloading(true);
+    setError(null);
+
+    try {
+      // Fetch PDF with authentication header
+      const response = await api.get(approveData.pdf_url, {
+        responseType: 'blob',
+      });
+
+      // Create blob and download
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `answer_sheet_${approveData.attempt_id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
+        'Ошибка скачивания PDF.';
+      setError(message);
+    } finally {
+      setDownloading(false);
+    }
   };
 
   return (
@@ -159,15 +191,9 @@ const AdmissionPage: React.FC = () => {
           </div>
           <h2 className="mb-16">Бланк ответов</h2>
           <div className="mb-16">
-            <a
-              href={approveData.pdf_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn"
-              style={{ display: 'inline-block', textDecoration: 'none' }}
-            >
+            <Button onClick={handleDownloadPdf} loading={downloading}>
               Скачать бланк ответов PDF
-            </a>
+            </Button>
           </div>
           <h3 className="mb-16">QR-код бланка</h3>
           <QRCodeDisplay value={approveData.sheet_token} size={200} />

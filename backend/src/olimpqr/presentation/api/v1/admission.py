@@ -2,7 +2,7 @@
 
 from typing import Annotated
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ....infrastructure.database import get_db
@@ -114,4 +114,54 @@ async def approve_admission(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
+        )
+
+
+@router.get("/sheets/{attempt_id}/download")
+async def download_answer_sheet(
+    attempt_id: UUID,
+    current_user: Annotated[User, Depends(require_role(UserRole.ADMITTER, UserRole.ADMIN))],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    """Download answer sheet PDF by proxying through backend.
+
+    This endpoint retrieves the PDF from MinIO and streams it to the client,
+    avoiding presigned URL signature issues.
+    """
+    try:
+        # Get attempt to find PDF path
+        attempt_repo = AttemptRepositoryImpl(db)
+        attempt = await attempt_repo.get_by_id(attempt_id)
+
+        if not attempt:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Attempt not found",
+            )
+
+        if not attempt.pdf_file_path:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="PDF file not found for this attempt",
+            )
+
+        # Download from MinIO
+        storage = MinIOStorage()
+        pdf_bytes = storage.download_file(
+            bucket=settings.minio_bucket_sheets,
+            object_name=attempt.pdf_file_path,
+        )
+
+        # Return as streaming response
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename=answer_sheet_{attempt_id}.pdf"
+            },
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to download PDF: {str(e)}",
         )

@@ -162,12 +162,10 @@ class ApproveAdmissionUseCase:
         )
         await self.audit_log_repo.create(audit)
 
-        # 13. Get presigned URL for PDF download
-        pdf_url = self.storage.get_presigned_url(
-            bucket=settings.minio_bucket_sheets,
-            object_name=object_name,
-            expires_seconds=3600,
-        )
+        # 13. Generate backend download URL instead of presigned MinIO URL
+        # This avoids signature mismatch issues when MinIO is accessed via different endpoints
+        # Path is relative to API baseURL (/api/v1), so don't include the prefix
+        pdf_url = f"admission/sheets/{attempt.id}/download"
 
         return ApproveAdmissionResult(
             attempt_id=attempt.id,
