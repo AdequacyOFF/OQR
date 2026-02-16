@@ -15,6 +15,16 @@ export interface UserInfo {
   is_active: boolean;
 }
 
+export interface ParticipantProfile {
+  id: string;
+  user_id: string;
+  full_name: string;
+  school: string;
+  grade: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Competition {
   id: string;
   name: string;
@@ -35,6 +45,9 @@ export interface Registration {
   status: string;
   created_at: string;
   entry_token?: string;
+  attempt_id?: string;
+  variant_number?: number;
+  final_score?: number | null;
 }
 
 export interface ScanItem {

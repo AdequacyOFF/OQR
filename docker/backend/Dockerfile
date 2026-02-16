@@ -14,6 +14,9 @@ RUN apt-get update && apt-get install -y \
     libxext6 \
     libxrender-dev \
     libgomp1 \
+    fonts-dejavu \
+    fonts-dejavu-core \
+    fonts-dejavu-extra \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Poetry

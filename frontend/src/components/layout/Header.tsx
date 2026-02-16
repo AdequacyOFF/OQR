@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import useAuthStore from '../../store/authStore';
 import Button from '../common/Button';
+import logoBlue from '../../assets/images/logo/logo_blue.png';
 
 const Header: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuthStore();
@@ -44,8 +45,9 @@ const Header: React.FC = () => {
   return (
     <header className="header">
       <div className="header-inner">
-        <Link to="/" className="header-logo">
-          OlimpQR
+        <Link to="/" className="header-logo-container">
+          <img src={logoBlue} alt="Logo" className="header-logo-image" />
+          <span className="header-logo-text">OlimpQR</span>
         </Link>
         <nav className="header-nav">
           {isAuthenticated ? (

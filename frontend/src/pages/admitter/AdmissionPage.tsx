@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { Html5Qrcode } from 'html5-qrcode';
 import api from '../../api/client';
 import Layout from '../../components/layout/Layout';
 import QRScanner from '../../components/qr/QRScanner';
 import QRCodeDisplay from '../../components/qr/QRCodeDisplay';
 import Button from '../../components/common/Button';
 import Spinner from '../../components/common/Spinner';
+import FileUploader from '../../components/upload/FileUploader';
 
 interface VerifyResponse {
   registration_id: string;
@@ -25,10 +27,12 @@ interface ApproveResponse {
 }
 
 const AdmissionPage: React.FC = () => {
+  const [scanMode, setScanMode] = useState<'camera' | 'upload'>('camera');
   const [scanning, setScanning] = useState(true);
   const [verifying, setVerifying] = useState(false);
   const [approving, setApproving] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [verifyData, setVerifyData] = useState<VerifyResponse | null>(null);
   const [approveData, setApproveData] = useState<ApproveResponse | null>(null);
@@ -84,6 +88,43 @@ const AdmissionPage: React.FC = () => {
     setApproveData(null);
     setError(null);
     setScannedToken(null);
+    setProcessing(false);
+  };
+
+  const handleFileUpload = async (file: File) => {
+    setProcessing(true);
+    setError(null);
+    setScanning(false);
+
+    try {
+      // Create a temporary element ID for QR scanning
+      const tempId = 'qr-temp-' + Date.now();
+      const tempDiv = document.createElement('div');
+      tempDiv.id = tempId;
+      tempDiv.style.display = 'none';
+      document.body.appendChild(tempDiv);
+
+      try {
+        // Scan QR code from uploaded image
+        const html5QrCode = new Html5Qrcode(tempId);
+        const decodedText = await html5QrCode.scanFile(file, false);
+
+        // Process the scanned QR code
+        await handleScan(decodedText);
+
+        // Cleanup
+        html5QrCode.clear();
+      } finally {
+        // Always remove temp div
+        document.body.removeChild(tempDiv);
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Не удалось распознать QR-код на изображении';
+      setError(message);
+      setScanning(true);
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const handleDownloadPdf = async () => {
@@ -125,15 +166,59 @@ const AdmissionPage: React.FC = () => {
 
       {scanning && (
         <div className="card">
-          <h2 className="mb-16">Сканировать входной QR-код</h2>
-          <QRScanner
-            onScan={handleScan}
-            onError={(err) => console.error('Ошибка QR:', err)}
-          />
+          {/* Mode toggle buttons */}
+          <div className="scan-mode-toggle mb-24">
+            <button
+              className={`mode-btn ${scanMode === 'camera' ? 'active' : ''}`}
+              onClick={() => setScanMode('camera')}
+              disabled={processing}
+            >
+              Камера
+            </button>
+            <button
+              className={`mode-btn ${scanMode === 'upload' ? 'active' : ''}`}
+              onClick={() => setScanMode('upload')}
+              disabled={processing}
+            >
+              Загрузить фото
+            </button>
+          </div>
+
+          {scanMode === 'camera' ? (
+            <>
+              <h2 className="mb-16">Сканировать входной QR-код камерой</h2>
+              <QRScanner
+                onScan={handleScan}
+                onError={(err) => console.error('Ошибка QR:', err)}
+              />
+            </>
+          ) : (
+            <>
+              <h2 className="mb-16">Загрузить фото QR-кода</h2>
+              <FileUploader
+                onUpload={handleFileUpload}
+                uploading={processing}
+                accept="image/*"
+                maxSizeMB={10}
+              />
+            </>
+          )}
         </div>
       )}
 
-      {verifying && <Spinner />}
+      {verifying && (
+        <div className="card">
+          <Spinner />
+          <p className="text-center mt-16">Проверка участника...</p>
+        </div>
+      )}
+
+      {processing && (
+        <div className="card">
+          <Spinner />
+          <p className="text-center mt-16">Распознавание QR-кода...</p>
+        </div>
+      )}
 
       {verifyData && !approveData && (
         <div className="card">
@@ -207,6 +292,64 @@ const AdmissionPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      <style>{`
+        .scan-mode-toggle {
+          display: flex;
+          gap: 12px;
+          justify-content: center;
+          border-bottom: 2px solid #e2e8f0;
+          padding-bottom: 16px;
+        }
+
+        .mode-btn {
+          flex: 1;
+          max-width: 200px;
+          padding: 12px 24px;
+          font-size: 16px;
+          font-weight: 600;
+          border: 2px solid #cbd5e0;
+          border-radius: 8px;
+          background: white;
+          color: #4a5568;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+        }
+
+        .mode-btn:hover:not(:disabled) {
+          border-color: #4299e1;
+          background: #ebf8ff;
+          color: #2b6cb0;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 8px rgba(66, 153, 225, 0.2);
+        }
+
+        .mode-btn.active {
+          border-color: #4299e1;
+          background: #4299e1;
+          color: white;
+          box-shadow: 0 4px 12px rgba(66, 153, 225, 0.4);
+        }
+
+        .mode-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        @media (max-width: 640px) {
+          .scan-mode-toggle {
+            flex-direction: column;
+          }
+
+          .mode-btn {
+            max-width: 100%;
+          }
+        }
+      `}</style>
     </Layout>
   );
 };

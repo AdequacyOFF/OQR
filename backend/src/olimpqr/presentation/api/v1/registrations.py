@@ -10,7 +10,8 @@ from ....infrastructure.repositories import (
     RegistrationRepositoryImpl,
     CompetitionRepositoryImpl,
     ParticipantRepositoryImpl,
-    EntryTokenRepositoryImpl
+    EntryTokenRepositoryImpl,
+    AttemptRepositoryImpl
 )
 from ....domain.services import TokenService, QRService
 from ....domain.value_objects import UserRole
@@ -119,18 +120,39 @@ async def get_my_registrations(
         participant.id, skip=skip, limit=limit
     )
 
-    return RegistrationListResponse(
-        items=[
+    # Get attempts and entry tokens for each registration
+    attempt_repo = AttemptRepositoryImpl(db)
+    entry_token_repo = EntryTokenRepositoryImpl(db)
+    items = []
+    for r in registrations:
+        # Try to get attempt for this registration
+        attempt = await attempt_repo.get_by_registration(r.id)
+
+        # Get entry token for this registration
+        entry_token = await entry_token_repo.get_by_registration(r.id)
+        raw_token = None
+        if entry_token and entry_token.raw_token:
+            raw_token = entry_token.raw_token
+        elif entry_token:
+            # Fallback to registration_id for old registrations
+            raw_token = str(r.id)
+
+        items.append(
             RegistrationResponse(
                 id=r.id,
                 participant_id=r.participant_id,
                 competition_id=r.competition_id,
                 status=r.status,
                 created_at=r.created_at,
-                entry_token=None
+                entry_token=raw_token,
+                attempt_id=attempt.id if attempt else None,
+                variant_number=attempt.variant_number if attempt else None,
+                final_score=attempt.score_total if attempt else None
             )
-            for r in registrations
-        ],
+        )
+
+    return RegistrationListResponse(
+        items=items,
         total=len(registrations)
     )
 

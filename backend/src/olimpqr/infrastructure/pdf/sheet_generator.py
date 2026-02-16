@@ -6,9 +6,30 @@ from reportlab.lib.units import mm
 from reportlab.pdfgen import canvas
 from reportlab.lib import colors
 from reportlab.lib.utils import ImageReader
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 
 from ...domain.services import QRService
 from ...config import settings
+
+
+# Register fonts with Cyrillic support
+try:
+    # Try to register DejaVu fonts (included with reportlab)
+    from reportlab.pdfbase.ttfonts import TTFont
+    import os
+
+    # DejaVu fonts are usually available in reportlab's fonts directory
+    font_path = '/usr/share/fonts/truetype/dejavu/'
+    if os.path.exists(font_path + 'DejaVuSans.ttf'):
+        pdfmetrics.registerFont(TTFont('DejaVuSans', font_path + 'DejaVuSans.ttf'))
+        pdfmetrics.registerFont(TTFont('DejaVuSans-Bold', font_path + 'DejaVuSans-Bold.ttf'))
+    else:
+        # Fallback to Helvetica (limited Cyrillic support)
+        pass
+except Exception as e:
+    # If font registration fails, continue with default fonts
+    print(f"Warning: Could not register custom fonts: {e}")
 
 
 class SheetGenerator:
@@ -38,6 +59,9 @@ class SheetGenerator:
         buffer = BytesIO()
         c = canvas.Canvas(buffer, pagesize=A4)
 
+        # Draw logo in top left corner
+        self._draw_logo(c)
+
         # Draw header
         self._draw_header(c, competition_name, variant_number)
 
@@ -60,6 +84,32 @@ class SheetGenerator:
         buffer.seek(0)
         return buffer.getvalue()
 
+    def _draw_logo(self, c: canvas.Canvas):
+        """Draw logo in top left corner."""
+        import os
+        logo_path = os.path.join(os.path.dirname(__file__), 'logo_black.png')
+
+        if os.path.exists(logo_path):
+            try:
+                logo_image = ImageReader(logo_path)
+                # Draw logo (30mm x 30mm in top left)
+                logo_x = 15*mm
+                logo_y = self.page_height - 35*mm
+                logo_size = 25*mm
+
+                c.drawImage(
+                    logo_image,
+                    logo_x,
+                    logo_y,
+                    width=logo_size,
+                    height=logo_size,
+                    preserveAspectRatio=True,
+                    mask='auto'
+                )
+            except Exception as e:
+                # If logo fails to load, continue without it
+                print(f"Warning: Could not load logo: {e}")
+
     def _draw_header(
         self,
         c: canvas.Canvas,
@@ -67,14 +117,23 @@ class SheetGenerator:
         variant_number: int
     ):
         """Draw header with competition info."""
-        c.setFont("Helvetica-Bold", 16)
+        # Use DejaVu font for Cyrillic support, fallback to Helvetica
+        try:
+            c.setFont("DejaVuSans-Bold", 18)
+        except:
+            c.setFont("Helvetica-Bold", 18)
+
         c.drawCentredString(
             self.page_width / 2,
             self.page_height - 30*mm,
-            competition_name
+            "БЛАНК ОТВЕТОВ"
         )
 
-        c.setFont("Helvetica", 12)
+        try:
+            c.setFont("DejaVuSans", 12)
+        except:
+            c.setFont("Helvetica", 12)
+
         c.drawCentredString(
             self.page_width / 2,
             self.page_height - 40*mm,
@@ -129,12 +188,18 @@ class SheetGenerator:
         c.setLineWidth(2)
         c.rect(x, y, width, height)
 
-        # Draw label
-        c.setFont("Helvetica-Bold", 10)
+        # Draw label with Cyrillic support
+        try:
+            c.setFont("DejaVuSans-Bold", 10)
+        except:
+            c.setFont("Helvetica-Bold", 10)
         c.drawString(x, y + height + 3*mm, "ИТОГОВЫЙ БАЛЛ:")
 
-        # Draw instruction
-        c.setFont("Helvetica", 8)
+        # Draw instruction with Cyrillic support
+        try:
+            c.setFont("DejaVuSans", 8)
+        except:
+            c.setFont("Helvetica", 8)
         c.drawString(
             x,
             y - 5*mm,
@@ -152,30 +217,58 @@ class SheetGenerator:
         c.setFillColor(colors.black)
 
     def _draw_answer_fields(self, c: canvas.Canvas):
-        """Draw numbered answer fields."""
-        start_y = self.page_height - 100*mm
-        line_height = 8*mm
-        num_questions = 20
+        """Draw large answer grid with notebook-style grid."""
+        # Warning text with Cyrillic support
+        try:
+            c.setFont("DejaVuSans-Bold", 11)
+        except:
+            c.setFont("Helvetica-Bold", 11)
+        c.setFillColor(colors.red)
+        warning_y = self.page_height - 60*mm  # Moved up by 30mm
+        c.drawCentredString(
+            self.page_width / 2,
+            warning_y,
+            "ВНИМАНИЕ! Заполняйте ответы строго внутри рамки"
+        )
+        c.setFillColor(colors.black)
 
-        c.setFont("Helvetica", 10)
+        # Large rectangle frame - adjusted position and height
+        frame_x = 20*mm
+        frame_y = self.page_height - 240*mm - 20*mm  # Moved up by 30mm
+        frame_width = self.page_width - 40*mm
+        frame_height = 165*mm + 20*mm  # Increased by 20mm (2cm)
 
-        for i in range(1, num_questions + 1):
-            y = start_y - (i * line_height)
+        # Draw thick outer border
+        c.setStrokeColor(colors.black)
+        c.setLineWidth(2)
+        c.rect(frame_x, frame_y, frame_width, frame_height)
 
-            # Question number
-            c.drawString(20*mm, y, f"{i}.")
+        # Draw horizontal grid lines
+        c.setLineWidth(0.5)
+        c.setStrokeColor(colors.HexColor("#CCCCCC"))
+        line_spacing = 8*mm
+        num_h_lines = int(frame_height / line_spacing)
 
-            # Answer line
-            c.line(
-                30*mm,
-                y,
-                self.page_width - 20*mm,
-                y
-            )
+        for i in range(1, num_h_lines):
+            y = frame_y + (i * line_spacing)
+            c.line(frame_x, y, frame_x + frame_width, y)
+
+        # Draw vertical grid lines for proper grid
+        col_spacing = 8*mm
+        num_v_lines = int(frame_width / col_spacing)
+
+        for i in range(1, num_v_lines):
+            x = frame_x + (i * col_spacing)
+            c.line(x, frame_y, x, frame_y + frame_height)
+
+        c.setStrokeColor(colors.black)
 
     def _draw_footer(self, c: canvas.Canvas):
-        """Draw footer with instructions."""
-        c.setFont("Helvetica", 8)
+        """Draw footer with instructions (no signature field)."""
+        try:
+            c.setFont("DejaVuSans", 8)
+        except:
+            c.setFont("Helvetica", 8)
         c.setFillColor(colors.grey)
 
         footer_text = [

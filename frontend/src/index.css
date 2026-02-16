@@ -437,6 +437,31 @@ select.input option {
   letter-spacing: -0.02em;
 }
 
+.header-logo-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  transition: transform 0.2s ease;
+}
+
+.header-logo-container:hover {
+  transform: scale(1.02);
+}
+
+.header-logo-image {
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+}
+
+.header-logo-text {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--accent-primary);
+  letter-spacing: -0.02em;
+}
+
 .header-nav {
   display: flex;
   align-items: center;

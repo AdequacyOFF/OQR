@@ -8,6 +8,7 @@ from .admission import router as admission_router
 from .scans import router as scans_router
 from .admin import router as admin_router
 from .results import router as results_router
+from .profiles import router as profiles_router
 
 api_router = APIRouter()
 
@@ -19,5 +20,6 @@ api_router.include_router(admission_router, prefix="/admission", tags=["Admissio
 api_router.include_router(scans_router, prefix="/scans", tags=["Scans"])
 api_router.include_router(admin_router, prefix="/admin", tags=["Admin"])
 api_router.include_router(results_router, prefix="/results", tags=["Results"])
+api_router.include_router(profiles_router, prefix="/profile", tags=["Profile"])
 
 __all__ = ["api_router"]

@@ -27,7 +27,8 @@
       "Bash(python3:*)",
       "Bash(python -c:*)",
       "Bash(chmod:*)",
-      "Bash(docker-compose down:*)"
+      "Bash(docker-compose down:*)",
+      "Bash(npm run dev:*)"
     ],
     "deny": [],
     "ask": []

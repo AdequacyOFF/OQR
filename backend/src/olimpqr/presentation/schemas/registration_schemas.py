@@ -20,6 +20,9 @@ class RegistrationResponse(BaseModel):
     status: RegistrationStatus
     created_at: datetime
     entry_token: str | None = None  # Only included on creation
+    attempt_id: UUID | None = None  # Attempt ID if admission completed
+    variant_number: int | None = None  # Variant number if admission completed
+    final_score: int | None = None  # Final score if scored
 
     model_config = {
         "json_schema_extra": {
@@ -29,7 +32,10 @@ class RegistrationResponse(BaseModel):
                 "competition_id": "123e4567-e89b-12d3-a456-426614174002",
                 "status": "pending",
                 "created_at": "2026-02-12T12:00:00",
-                "entry_token": "abcdef123456..."
+                "entry_token": "abcdef123456...",
+                "attempt_id": "123e4567-e89b-12d3-a456-426614174003",
+                "variant_number": 1,
+                "final_score": 85
             }]
         }
     }

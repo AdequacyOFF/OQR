@@ -1,18 +1,33 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/client';
-import type { Competition, Registration } from '../../types';
+import type { Competition, Registration, ParticipantProfile } from '../../types';
 import Layout from '../../components/layout/Layout';
 import Button from '../../components/common/Button';
 import Spinner from '../../components/common/Spinner';
+import Input from '../../components/common/Input';
+import QRCodeDisplay from '../../components/qr/QRCodeDisplay';
+import useAuthStore from '../../store/authStore';
+
+type TabType = 'profile' | 'registrations' | 'competitions';
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const [activeTab, setActiveTab] = useState<TabType>('profile');
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [profile, setProfile] = useState<ParticipantProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [registeringId, setRegisteringId] = useState<string | null>(null);
+  const [editMode, setEditMode] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editForm, setEditForm] = useState({
+    full_name: '',
+    school: '',
+    grade: 0,
+  });
 
   useEffect(() => {
     loadData();
@@ -21,12 +36,19 @@ const DashboardPage: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [compRes, regRes] = await Promise.all([
+      const [compRes, regRes, profileRes] = await Promise.all([
         api.get<{ competitions: Competition[]; total: number }>('competitions'),
         api.get<{ items: Registration[]; total: number }>('registrations'),
+        api.get<ParticipantProfile>('profile'),
       ]);
       setCompetitions(compRes.data.competitions || []);
       setRegistrations(regRes.data.items || []);
+      setProfile(profileRes.data);
+      setEditForm({
+        full_name: profileRes.data.full_name,
+        school: profileRes.data.school,
+        grade: profileRes.data.grade,
+      });
     } catch {
       setError('Не удалось загрузить данные.');
     } finally {
@@ -36,14 +58,13 @@ const DashboardPage: React.FC = () => {
 
   const handleRegister = async (competitionId: string) => {
     setRegisteringId(competitionId);
+    setError(null);
     try {
       const { data } = await api.post<Registration>('registrations', {
         competition_id: competitionId,
       });
       setRegistrations((prev) => [...prev, data]);
-      if (data.entry_token) {
-        navigate(`/registrations/${data.id}/qr`);
-      }
+      setActiveTab('registrations');
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
@@ -51,6 +72,23 @@ const DashboardPage: React.FC = () => {
       setError(message);
     } finally {
       setRegisteringId(null);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      const { data } = await api.put<ParticipantProfile>('profile', editForm);
+      setProfile(data);
+      setEditMode(false);
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
+        'Ошибка сохранения профиля.';
+      setError(message);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -62,7 +100,7 @@ const DashboardPage: React.FC = () => {
       draft: 'Черновик',
       registration_open: 'Регистрация открыта',
       in_progress: 'Проходит',
-      finished: 'Завершена',
+      checking: 'Проверка работ',
       published: 'Результаты опубликованы',
     };
     return labels[status] || status;
@@ -70,12 +108,22 @@ const DashboardPage: React.FC = () => {
 
   const getRegStatusLabel = (status: string): string => {
     const labels: Record<string, string> = {
-      registered: 'Зарегистрирован',
+      pending: 'Зарегистрирован',
       admitted: 'Допущен',
       completed: 'Завершен',
       cancelled: 'Отменен',
     };
     return labels[status] || status;
+  };
+
+  const getRegStatusColor = (status: string): string => {
+    const colors: Record<string, string> = {
+      pending: 'blue',
+      admitted: 'green',
+      completed: 'purple',
+      cancelled: 'red',
+    };
+    return colors[status] || 'gray';
   };
 
   if (loading) {
@@ -92,76 +140,394 @@ const DashboardPage: React.FC = () => {
 
       {error && <div className="alert alert-error mb-16">{error}</div>}
 
-      <h2 className="mb-16">Доступные олимпиады</h2>
-      <div className="grid grid-2 mb-24">
-        {competitions.length === 0 ? (
-          <p className="text-muted">Нет доступных олимпиад.</p>
-        ) : (
-          competitions.map((comp) => (
-            <div key={comp.id} className="card">
-              <h3>{comp.name}</h3>
-              <p className="text-muted">
-                Дата: {new Date(comp.date).toLocaleDateString('ru-RU')}
-              </p>
-              <p className="text-muted">Статус: {getStatusLabel(comp.status)}</p>
-              <p className="text-muted">Макс. балл: {comp.max_score}</p>
-              <div className="mt-16">
-                {isRegistered(comp.id) ? (
-                  <Button variant="secondary" disabled>
-                    Зарегистрирован
-                  </Button>
-                ) : comp.status === 'registration_open' ? (
-                  <Button
-                    onClick={() => handleRegister(comp.id)}
-                    loading={registeringId === comp.id}
-                  >
-                    Зарегистрироваться
-                  </Button>
-                ) : (
-                  <span className="text-muted">Регистрация закрыта</span>
-                )}
-              </div>
-            </div>
-          ))
-        )}
+      {/* Tabs */}
+      <div className="tabs mb-24">
+        <button
+          className={`tab ${activeTab === 'profile' ? 'active' : ''}`}
+          onClick={() => setActiveTab('profile')}
+        >
+          Профиль
+        </button>
+        <button
+          className={`tab ${activeTab === 'registrations' ? 'active' : ''}`}
+          onClick={() => setActiveTab('registrations')}
+        >
+          Мои регистрации ({registrations.length})
+        </button>
+        <button
+          className={`tab ${activeTab === 'competitions' ? 'active' : ''}`}
+          onClick={() => setActiveTab('competitions')}
+        >
+          Доступные олимпиады ({competitions.filter(c => !isRegistered(c.id)).length})
+        </button>
       </div>
 
-      <h2 className="mb-16">Мои регистрации</h2>
-      {registrations.length === 0 ? (
-        <p className="text-muted">Нет регистраций.</p>
-      ) : (
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Олимпиада</th>
-              <th>Статус</th>
-              <th>Дата</th>
-              <th>Действия</th>
-            </tr>
-          </thead>
-          <tbody>
-            {registrations.map((reg) => {
-              const comp = competitions.find((c) => c.id === reg.competition_id);
-              return (
-                <tr key={reg.id}>
-                  <td>{comp?.name || reg.competition_id}</td>
-                  <td>{getRegStatusLabel(reg.status)}</td>
-                  <td>{new Date(reg.created_at).toLocaleDateString('ru-RU')}</td>
-                  <td>
-                    <Button
-                      variant="secondary"
-                      className="btn-sm"
-                      onClick={() => navigate(`/registrations/${reg.id}/qr`)}
-                    >
-                      Показать QR
-                    </Button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+      {/* Profile Tab */}
+      {activeTab === 'profile' && profile && (
+        <div className="card">
+          <div className="flex-between mb-24">
+            <h2>Личная информация</h2>
+            {!editMode && (
+              <Button variant="secondary" onClick={() => setEditMode(true)}>
+                Редактировать
+              </Button>
+            )}
+          </div>
+
+          {editMode ? (
+            <div>
+              <Input
+                label="ФИО"
+                value={editForm.full_name}
+                onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
+              />
+              <Input
+                label="Школа"
+                value={editForm.school}
+                onChange={(e) => setEditForm({ ...editForm, school: e.target.value })}
+              />
+              <Input
+                label="Класс"
+                type="number"
+                value={editForm.grade}
+                onChange={(e) => setEditForm({ ...editForm, grade: parseInt(e.target.value) })}
+              />
+              <div className="flex gap-8 mt-16">
+                <Button onClick={handleSaveProfile} loading={saving}>
+                  Сохранить
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setEditMode(false);
+                    setEditForm({
+                      full_name: profile.full_name,
+                      school: profile.school,
+                      grade: profile.grade,
+                    });
+                  }}
+                >
+                  Отмена
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="profile-info">
+              <div className="info-row">
+                <span className="info-label">Email:</span>
+                <span className="info-value">{user?.email}</span>
+              </div>
+              <div className="info-row">
+                <span className="info-label">ФИО:</span>
+                <span className="info-value">{profile.full_name}</span>
+              </div>
+              <div className="info-row">
+                <span className="info-label">Школа:</span>
+                <span className="info-value">{profile.school}</span>
+              </div>
+              <div className="info-row">
+                <span className="info-label">Класс:</span>
+                <span className="info-value">{profile.grade}</span>
+              </div>
+            </div>
+          )}
+        </div>
       )}
+
+      {/* Registrations Tab */}
+      {activeTab === 'registrations' && (
+        <div>
+          {registrations.length === 0 ? (
+            <div className="card text-center">
+              <p className="text-muted mb-16">Вы пока не зарегистрированы ни на одну олимпиаду</p>
+              <Button onClick={() => setActiveTab('competitions')}>
+                Посмотреть доступные олимпиады
+              </Button>
+            </div>
+          ) : (
+            <div className="registrations-grid">
+              {registrations.map((reg) => {
+                const comp = competitions.find((c) => c.id === reg.competition_id);
+                return (
+                  <div key={reg.id} className="card registration-card">
+                    <div className="reg-header">
+                      <h3>{comp?.name || 'Олимпиада'}</h3>
+                      <span className={`status-badge status-${getRegStatusColor(reg.status)}`}>
+                        {getRegStatusLabel(reg.status)}
+                      </span>
+                    </div>
+
+                    {comp && (
+                      <div className="reg-info">
+                        <p className="text-muted">
+                          Дата: {new Date(comp.date).toLocaleDateString('ru-RU')}
+                        </p>
+                        {reg.variant_number && (
+                          <p className="text-muted">Вариант: {reg.variant_number}</p>
+                        )}
+                      </div>
+                    )}
+
+                    {reg.entry_token && (reg.status === 'pending' || reg.status === 'admitted') && (
+                      <div className="qr-section mt-16">
+                        <p className="text-center mb-8"><strong>QR-код для допуска</strong></p>
+                        <div className="qr-container">
+                          <QRCodeDisplay value={reg.entry_token} size={180} />
+                        </div>
+                        <p className="text-muted text-center mt-8" style={{ fontSize: 10 }}>
+                          {reg.status === 'pending'
+                            ? 'Покажите этот QR-код при допуске'
+                            : 'Вы допущены к олимпиаде'}
+                        </p>
+                      </div>
+                    )}
+
+                    {reg.final_score !== undefined && reg.final_score !== null && comp && (
+                      <div className="score-section mt-16">
+                        <div className="score-display">
+                          <span className="score-label">Итоговый балл:</span>
+                          <span className="score-value">
+                            {reg.final_score} / {comp.max_score}
+                          </span>
+                        </div>
+                        {comp.status === 'published' && (
+                          <Button
+                            variant="secondary"
+                            className="mt-8"
+                            onClick={() => navigate(`/results/${comp.id}`)}
+                          >
+                            Посмотреть результаты
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Competitions Tab */}
+      {activeTab === 'competitions' && (
+        <div className="grid grid-2">
+          {competitions.filter(c => !isRegistered(c.id)).length === 0 ? (
+            <p className="text-muted">Нет доступных олимпиад для регистрации.</p>
+          ) : (
+            competitions
+              .filter(c => !isRegistered(c.id))
+              .map((comp) => (
+                <div key={comp.id} className="card">
+                  <h3>{comp.name}</h3>
+                  <p className="text-muted">
+                    Дата: {new Date(comp.date).toLocaleDateString('ru-RU')}
+                  </p>
+                  <p className="text-muted">
+                    Регистрация: {new Date(comp.registration_start).toLocaleDateString('ru-RU')} -{' '}
+                    {new Date(comp.registration_end).toLocaleDateString('ru-RU')}
+                  </p>
+                  <p className="text-muted">Статус: {getStatusLabel(comp.status)}</p>
+                  <p className="text-muted">Макс. балл: {comp.max_score}</p>
+                  <p className="text-muted">Вариантов: {comp.variants_count}</p>
+                  <div className="mt-16">
+                    {comp.status === 'registration_open' ? (
+                      <Button
+                        onClick={() => handleRegister(comp.id)}
+                        loading={registeringId === comp.id}
+                      >
+                        Зарегистрироваться
+                      </Button>
+                    ) : (
+                      <span className="text-muted">Регистрация закрыта</span>
+                    )}
+                  </div>
+                </div>
+              ))
+          )}
+        </div>
+      )}
+
+      <style>{`
+        .tabs {
+          display: flex;
+          gap: 8px;
+          border-bottom: 2px solid var(--glass-border);
+          padding-bottom: 0;
+        }
+
+        .tab {
+          padding: 12px 24px;
+          background: none;
+          border: none;
+          border-bottom: 3px solid transparent;
+          color: var(--text-secondary);
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+          position: relative;
+          bottom: -2px;
+        }
+
+        .tab:hover {
+          color: var(--accent-primary);
+          background: var(--glass-light);
+        }
+
+        .tab.active {
+          color: var(--accent-primary);
+          border-bottom-color: var(--accent-primary);
+        }
+
+        .profile-info {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+
+        .info-row {
+          display: flex;
+          padding: 12px 0;
+          border-bottom: 1px solid var(--glass-border);
+        }
+
+        .info-row:last-child {
+          border-bottom: none;
+        }
+
+        .info-label {
+          font-weight: 600;
+          color: var(--text-secondary);
+          min-width: 120px;
+        }
+
+        .info-value {
+          color: var(--text-primary);
+        }
+
+        .registrations-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+          gap: 24px;
+        }
+
+        .registration-card {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .reg-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: start;
+          margin-bottom: 16px;
+          gap: 12px;
+        }
+
+        .reg-header h3 {
+          margin: 0;
+          flex: 1;
+        }
+
+        .status-badge {
+          padding: 4px 12px;
+          border-radius: 12px;
+          font-size: 12px;
+          font-weight: 600;
+          white-space: nowrap;
+        }
+
+        .status-blue {
+          background: #ebf8ff;
+          color: #2b6cb0;
+        }
+
+        .status-green {
+          background: #f0fff4;
+          color: #22543d;
+        }
+
+        .status-purple {
+          background: #faf5ff;
+          color: #553c9a;
+        }
+
+        .status-red {
+          background: #fff5f5;
+          color: #c53030;
+        }
+
+        .status-gray {
+          background: #f7fafc;
+          color: #4a5568;
+        }
+
+        .reg-info {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .qr-section {
+          background: var(--glass-light);
+          padding: 16px;
+          border-radius: 8px;
+          text-align: center;
+        }
+
+        .qr-container {
+          display: flex;
+          justify-content: center;
+          padding: 12px;
+          background: white;
+          border-radius: 8px;
+        }
+
+        .score-section {
+          background: var(--glass-light);
+          padding: 16px;
+          border-radius: 8px;
+        }
+
+        .score-display {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          font-size: 16px;
+        }
+
+        .score-label {
+          font-weight: 600;
+          color: var(--text-secondary);
+        }
+
+        .score-value {
+          font-size: 24px;
+          font-weight: 800;
+          color: var(--accent-primary);
+        }
+
+        @media (max-width: 640px) {
+          .tabs {
+            overflow-x: auto;
+          }
+
+          .tab {
+            padding: 10px 16px;
+            font-size: 13px;
+          }
+
+          .registrations-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .reg-header {
+            flex-direction: column;
+            align-items: start;
+          }
+        }
+      `}</style>
     </Layout>
   );
 };
