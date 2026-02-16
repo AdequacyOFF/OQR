@@ -194,3 +194,78 @@ async def get_registration(
         created_at=registration.created_at,
         entry_token=raw_token
     )
+
+
+@router.post("/{registration_id}/refresh-token", response_model=RegistrationResponse)
+async def refresh_entry_token(
+    registration_id: UUID,
+    current_user: Annotated[User, Depends(require_role(UserRole.PARTICIPANT))],
+    db: Annotated[AsyncSession, Depends(get_db)]
+):
+    """Refresh (regenerate) entry token for a registration.
+
+    Use this if the token has expired.
+    Cannot refresh if token has already been used (admission completed).
+    """
+    from datetime import datetime, timedelta
+
+    # Get participant
+    participant_repo = ParticipantRepositoryImpl(db)
+    participant = await participant_repo.get_by_user_id(current_user.id)
+    if not participant:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Participant profile not found"
+        )
+
+    # Get registration
+    registration_repo = RegistrationRepositoryImpl(db)
+    registration = await registration_repo.get_by_id(registration_id)
+    if not registration:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Registration not found"
+        )
+
+    # Check ownership
+    if registration.participant_id != participant.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied"
+        )
+
+    # Get existing entry token
+    entry_token_repo = EntryTokenRepositoryImpl(db)
+    entry_token = await entry_token_repo.get_by_registration(registration_id)
+    if not entry_token:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Entry token not found"
+        )
+
+    # Check if already used
+    if entry_token.is_used:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot refresh token - admission already completed"
+        )
+
+    # Generate new token
+    token_service = TokenService(settings.hmac_secret_key)
+    new_token = token_service.generate_token()
+
+    # Update entry token
+    entry_token.token_hash = new_token.hash
+    entry_token.raw_token = new_token.raw
+    entry_token.expires_at = datetime.utcnow() + timedelta(hours=settings.entry_token_expire_hours)
+
+    await entry_token_repo.update(entry_token)
+
+    return RegistrationResponse(
+        id=registration.id,
+        participant_id=registration.participant_id,
+        competition_id=registration.competition_id,
+        status=registration.status,
+        created_at=registration.created_at,
+        entry_token=new_token.raw
+    )

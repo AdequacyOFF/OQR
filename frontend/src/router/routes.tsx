@@ -63,7 +63,7 @@ const AppRouter: React.FC = () => {
   }
 
   return (
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Routes>
         {/* Public routes */}
         <Route path="/login" element={<LoginPage />} />
@@ -113,7 +113,7 @@ const AppRouter: React.FC = () => {
         <Route
           path="/scans"
           element={
-            <ProtectedRoute allowedRoles={['scanner']}>
+            <ProtectedRoute allowedRoles={['scanner', 'admin']}>
               <ScansPage />
             </ProtectedRoute>
           }
@@ -121,7 +121,7 @@ const AppRouter: React.FC = () => {
         <Route
           path="/scans/:id"
           element={
-            <ProtectedRoute allowedRoles={['scanner']}>
+            <ProtectedRoute allowedRoles={['scanner', 'admin']}>
               <ScanDetailPage />
             </ProtectedRoute>
           }

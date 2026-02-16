@@ -70,10 +70,10 @@ async def upload_scan(
         content_type=file.content_type or "image/png",
     )
 
-    # Create Scan entity
+    # Create Scan entity (attempt_id can be None - will be linked via QR by Celery worker)
     scan = Scan(
         id=scan_id,
-        attempt_id=attempt_id or uuid4(),  # placeholder if not known
+        attempt_id=attempt_id,
         file_path=object_name,
         uploaded_by=current_user.id,
     )
@@ -164,6 +164,10 @@ async def verify_scan_score(
     scan = await scan_repo.get_by_id(scan_id)
     if not scan:
         raise HTTPException(status_code=404, detail="Scan not found")
+
+    # Check if scan has linked attempt
+    if not scan.attempt_id:
+        raise HTTPException(status_code=400, detail="Scan is not linked to any attempt. QR code not yet recognized.")
 
     # Verify and correct scan
     scan.verify(verified_by=current_user.id, corrected_score=body.corrected_score)

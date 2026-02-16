@@ -21,7 +21,7 @@ class Scan:
         created_at: When scan was uploaded
         updated_at: When scan was last updated
     """
-    attempt_id: UUID
+    attempt_id: UUID | None
     file_path: str
     uploaded_by: UUID
     id: UUID = field(default_factory=uuid4)

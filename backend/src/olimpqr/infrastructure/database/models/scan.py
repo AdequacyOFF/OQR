@@ -27,9 +27,9 @@ class ScanModel(Base):
         default=uuid.uuid4,
         index=True
     )
-    attempt_id: Mapped[uuid.UUID] = mapped_column(
+    attempt_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         ForeignKey("attempts.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
         index=True
     )
     file_path: Mapped[str] = mapped_column(
@@ -69,7 +69,7 @@ class ScanModel(Base):
     )
 
     # Relationships
-    attempt: Mapped["AttemptModel"] = relationship(
+    attempt: Mapped[Optional["AttemptModel"]] = relationship(
         "AttemptModel",
         back_populates="scans",
         lazy="selectin"

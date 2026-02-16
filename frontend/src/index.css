@@ -816,3 +816,123 @@ select.input option {
     border: 1px solid #e2e8f0;
   }
 }
+
+/* ============================================
+   QR Scanner Styling (Custom UI)
+   ============================================ */
+.qr-scanner-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+  width: 100%;
+}
+
+.qr-scanner-container {
+  width: 100%;
+  max-width: 500px;
+  background: var(--glass-strong);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.qr-scanner-header {
+  padding: var(--space-md);
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.qr-camera-select {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--glass-surface);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  color: var(--text-primary);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23475569'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  padding-right: 40px;
+}
+
+.qr-camera-select:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: var(--focus-ring);
+}
+
+.qr-video-container {
+  background: #1a1a2e;
+  min-height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.qr-video-container video {
+  width: 100%;
+  height: auto;
+}
+
+.qr-scanner-error {
+  padding: var(--space-md);
+  background: rgba(220, 38, 38, 0.1);
+  color: var(--accent-danger);
+  font-size: 14px;
+  text-align: center;
+}
+
+.qr-scanner-controls {
+  padding: var(--space-md);
+  background: var(--glass-surface);
+  border-top: 1px solid var(--glass-border);
+  display: flex;
+  justify-content: center;
+  gap: var(--space-sm);
+}
+
+.qr-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.qr-btn-primary {
+  background: var(--accent-primary);
+  color: white;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+}
+
+.qr-btn-primary:hover {
+  background: var(--accent-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+}
+
+.qr-btn-secondary {
+  background: var(--glass-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--glass-border);
+}
+
+.qr-btn-secondary:hover {
+  background: var(--glass-strong);
+  transform: translateY(-1px);
+}
+
+/* Hide library branding */
+#qr-reader-container a[href*="html5qrcode"],
+#qr-reader-container img[alt*="Info"] {
+  display: none !important;
+}

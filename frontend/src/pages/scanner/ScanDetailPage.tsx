@@ -41,8 +41,8 @@ const ScanDetailPage: React.FC = () => {
     setSuccess(null);
 
     try {
-      const { data } = await api.post<ScanItem>(`scans/${scan.id}/verify`, {
-        verified_score: Number(correctedScore),
+      const { data } = await api.post(`scans/${scan.id}/verify`, {
+        corrected_score: Number(correctedScore),
       });
       setScan(data);
       setSuccess('Скан успешно подтверждён.');
