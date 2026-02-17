@@ -26,15 +26,15 @@ class LoginUserUseCase:
         # Get user by email
         user = await self.user_repository.get_by_email(dto.email)
         if not user:
-            raise ValueError("Invalid email or password")
+            raise ValueError("Неверный email или пароль")
 
         # Verify password
         if not verify_password(dto.password, user.password_hash):
-            raise ValueError("Invalid email or password")
+            raise ValueError("Неверный email или пароль")
 
         # Check if user is active
         if not user.is_active:
-            raise ValueError("User account is inactive")
+            raise ValueError("Аккаунт пользователя неактивен")
 
         # Generate JWT token
         access_token = create_access_token(

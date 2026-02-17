@@ -34,7 +34,7 @@ class Scan:
 
     def __post_init__(self):
         if not self.file_path:
-            raise ValueError("File path cannot be empty")
+            raise ValueError("Путь к файлу не может быть пустым")
 
     def update_ocr_result(self, score: int | None, confidence: float | None, raw_text: str):
         """Update OCR processing result.
@@ -45,9 +45,9 @@ class Scan:
             raw_text: Raw text extracted from score field
         """
         if score is not None and score < 0:
-            raise ValueError("OCR score cannot be negative")
+            raise ValueError("OCR балл не может быть отрицательным")
         if confidence is not None and not (0.0 <= confidence <= 1.0):
-            raise ValueError("Confidence must be between 0.0 and 1.0")
+            raise ValueError("Уверенность должна быть от 0.0 до 1.0")
 
         self.ocr_score = score
         self.ocr_confidence = confidence
@@ -63,7 +63,7 @@ class Scan:
         """
         if corrected_score is not None:
             if corrected_score < 0:
-                raise ValueError("Corrected score cannot be negative")
+                raise ValueError("Исправленный балл не может быть отрицательным")
             self.ocr_score = corrected_score
 
         self.verified_by = verified_by

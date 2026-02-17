@@ -64,7 +64,7 @@ class CompetitionRepositoryImpl(CompetitionRepository):
         )
         model = result.scalar_one_or_none()
         if not model:
-            raise ValueError(f"Competition with id {entity.id} not found")
+            raise ValueError(f"Олимпиада с id {entity.id} не найдена")
 
         model.name = entity.name
         model.date = entity.date

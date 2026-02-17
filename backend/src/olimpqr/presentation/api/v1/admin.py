@@ -72,16 +72,16 @@ async def create_staff_user(
     user_repo = UserRepositoryImpl(db)
 
     if await user_repo.exists_by_email(body.email):
-        raise HTTPException(status_code=400, detail="Email already in use")
+        raise HTTPException(status_code=400, detail="Email уже используется")
 
     # Validate participant-specific fields
     if body.role == UserRole.PARTICIPANT:
         if not body.full_name or len(body.full_name.strip()) < 2:
-            raise HTTPException(status_code=400, detail="Full name is required for participants (min 2 characters)")
+            raise HTTPException(status_code=400, detail="ФИО обязательно для участников (минимум 2 символа)")
         if not body.school or len(body.school.strip()) < 2:
-            raise HTTPException(status_code=400, detail="School is required for participants (min 2 characters)")
+            raise HTTPException(status_code=400, detail="Школа обязательна для участников (минимум 2 символа)")
         if body.grade is None or not (1 <= body.grade <= 12):
-            raise HTTPException(status_code=400, detail="Grade is required for participants (1-12)")
+            raise HTTPException(status_code=400, detail="Класс обязателен для участников (1-12)")
 
     from uuid import uuid4
 
@@ -127,7 +127,7 @@ async def update_user(
     user_repo = UserRepositoryImpl(db)
     user = await user_repo.get_by_id(user_id)
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
 
     if body.is_active is not None:
         if body.is_active:
@@ -159,10 +159,10 @@ async def deactivate_user(
     user_repo = UserRepositoryImpl(db)
     user = await user_repo.get_by_id(user_id)
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
 
     if user.id == current_user.id:
-        raise HTTPException(status_code=400, detail="Cannot deactivate yourself")
+        raise HTTPException(status_code=400, detail="Нельзя деактивировать себя")
 
     user.deactivate()
     await user_repo.update(user)

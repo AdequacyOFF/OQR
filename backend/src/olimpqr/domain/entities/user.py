@@ -30,9 +30,9 @@ class User:
 
     def __post_init__(self):
         if not self.email or "@" not in self.email:
-            raise ValueError("Invalid email address")
+            raise ValueError("Некорректный email адрес")
         if not self.password_hash:
-            raise ValueError("Password hash cannot be empty")
+            raise ValueError("Хеш пароля не может быть пустым")
         if not isinstance(self.role, UserRole):
             raise TypeError("Role must be a UserRole instance")
 

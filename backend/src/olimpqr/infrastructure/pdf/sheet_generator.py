@@ -14,22 +14,51 @@ from ...config import settings
 
 
 # Register fonts with Cyrillic support
-try:
-    # Try to register DejaVu fonts (included with reportlab)
-    from reportlab.pdfbase.ttfonts import TTFont
-    import os
+# Liberation Serif is a formal serif font (Times New Roman equivalent) suitable for olympiad documents
+import os
 
-    # DejaVu fonts are usually available in reportlab's fonts directory
-    font_path = '/usr/share/fonts/truetype/dejavu/'
-    if os.path.exists(font_path + 'DejaVuSans.ttf'):
-        pdfmetrics.registerFont(TTFont('DejaVuSans', font_path + 'DejaVuSans.ttf'))
-        pdfmetrics.registerFont(TTFont('DejaVuSans-Bold', font_path + 'DejaVuSans-Bold.ttf'))
-    else:
-        # Fallback to Helvetica (limited Cyrillic support)
-        pass
-except Exception as e:
-    # If font registration fails, continue with default fonts
-    print(f"Warning: Could not register custom fonts: {e}")
+_FONT_REGISTERED = False
+_FONT_REGULAR = "Helvetica"
+_FONT_BOLD = "Helvetica-Bold"
+
+def _register_fonts():
+    """Register Liberation Serif fonts for formal olympiad documents."""
+    global _FONT_REGISTERED, _FONT_REGULAR, _FONT_BOLD
+
+    if _FONT_REGISTERED:
+        return
+
+    try:
+        # Liberation Serif - formal serif font for official documents
+        liberation_path = '/usr/share/fonts/truetype/liberation/'
+        if os.path.exists(liberation_path + 'LiberationSerif-Regular.ttf'):
+            pdfmetrics.registerFont(TTFont('LiberationSerif', liberation_path + 'LiberationSerif-Regular.ttf'))
+            pdfmetrics.registerFont(TTFont('LiberationSerif-Bold', liberation_path + 'LiberationSerif-Bold.ttf'))
+            _FONT_REGULAR = "LiberationSerif"
+            _FONT_BOLD = "LiberationSerif-Bold"
+            _FONT_REGISTERED = True
+            return
+    except Exception as e:
+        print(f"Warning: Could not register Liberation Serif fonts: {e}")
+
+    try:
+        # Fallback to DejaVu Sans (sans-serif but has good Cyrillic support)
+        dejavu_path = '/usr/share/fonts/truetype/dejavu/'
+        if os.path.exists(dejavu_path + 'DejaVuSans.ttf'):
+            pdfmetrics.registerFont(TTFont('DejaVuSans', dejavu_path + 'DejaVuSans.ttf'))
+            pdfmetrics.registerFont(TTFont('DejaVuSans-Bold', dejavu_path + 'DejaVuSans-Bold.ttf'))
+            _FONT_REGULAR = "DejaVuSans"
+            _FONT_BOLD = "DejaVuSans-Bold"
+            _FONT_REGISTERED = True
+            return
+    except Exception as e:
+        print(f"Warning: Could not register DejaVu fonts: {e}")
+
+    # Final fallback is Helvetica (already set as default)
+    _FONT_REGISTERED = True
+
+# Register fonts on module load
+_register_fonts()
 
 
 class SheetGenerator:
@@ -116,29 +145,18 @@ class SheetGenerator:
         competition_name: str,
         variant_number: int
     ):
-        """Draw header with competition info."""
-        # Use DejaVu font for Cyrillic support, fallback to Helvetica
-        try:
-            c.setFont("DejaVuSans-Bold", 18)
-        except:
-            c.setFont("Helvetica-Bold", 18)
+        """Draw header with competition info.
 
+        Note: variant_number parameter is kept for API compatibility but not rendered.
+        """
+        # Use formal serif font (Liberation Serif) for olympiad documents
+        c.setFont(_FONT_BOLD, 18)
         c.drawCentredString(
             self.page_width / 2,
             self.page_height - 30*mm,
             "БЛАНК ОТВЕТОВ"
         )
-
-        try:
-            c.setFont("DejaVuSans", 12)
-        except:
-            c.setFont("Helvetica", 12)
-
-        c.drawCentredString(
-            self.page_width / 2,
-            self.page_height - 40*mm,
-            f"Вариант {variant_number}"
-        )
+        # Variant number intentionally not displayed per requirement
 
     def _draw_qr_code(self, c: canvas.Canvas, sheet_token: str):
         """Draw QR code in top right corner."""
@@ -170,38 +188,60 @@ class SheetGenerator:
 
         # Draw label
         c.setFont("Helvetica", 8)
-        c.drawString(qr_x, qr_y - 5*mm, "Scan Code")
+        c.drawString(qr_x, qr_y - 5*mm, "QR-код")
+
+    def _get_answer_frame_geometry(self):
+        """Get answer frame geometry (shared between answer fields and score field).
+
+        Returns:
+            tuple: (frame_x, frame_y, frame_width, frame_height) in ReportLab units
+        """
+        frame_x = 20*mm
+        frame_y = self.page_height - 240*mm - 20*mm
+        frame_width = self.page_width - 40*mm
+        frame_height = 165*mm + 20*mm
+        return frame_x, frame_y, frame_width, frame_height
 
     def _draw_score_field(self, c: canvas.Canvas):
-        """Draw score field in fixed position for OCR.
+        """Draw score field in bottom-right corner of answer frame for OCR.
+
+        Position is calculated dynamically from the answer frame geometry
+        with 10mm margins from frame borders.
 
         CRITICAL: These coordinates must match OCR settings!
+        Update config.py defaults if frame geometry changes.
         """
-        # Get coordinates from settings
-        x = settings.ocr_score_field_x * mm
-        y = self.page_height - (settings.ocr_score_field_y * mm)
+        # Get answer frame geometry
+        frame_x, frame_y, frame_width, frame_height = self._get_answer_frame_geometry()
+
+        # Score box dimensions
         width = settings.ocr_score_field_width * mm
         height = settings.ocr_score_field_height * mm
+
+        # Calculate position: bottom-right corner with 10mm margins
+        margin = 10*mm
+        helper_text_space = 5*mm  # Space for helper text below the box
+
+        # X position: right-aligned with 10mm margin from frame right edge
+        x = frame_x + frame_width - margin - width
+
+        # Y position: bottom-aligned with 10mm margin from frame bottom
+        # Account for helper text below the box
+        y = frame_y + margin + helper_text_space
 
         # Draw thick border for OCR detection
         c.setStrokeColor(colors.black)
         c.setLineWidth(2)
         c.rect(x, y, width, height)
 
-        # Draw label with Cyrillic support
-        try:
-            c.setFont("DejaVuSans-Bold", 10)
-        except:
-            c.setFont("Helvetica-Bold", 10)
-        c.drawString(x, y + height + 3*mm, "ИТОГОВЫЙ БАЛЛ:")
+        # Draw label with formal serif font (right-aligned above the box)
+        c.setFont(_FONT_BOLD, 10)
+        c.drawRightString(x + width, y + height + 3*mm, "ИТОГОВЫЙ БАЛЛ:")
 
-        # Draw instruction with Cyrillic support
-        try:
-            c.setFont("DejaVuSans", 8)
-        except:
-            c.setFont("Helvetica", 8)
-        c.drawString(
-            x,
+        # Draw instruction (right-aligned below the box)
+        c.setFont(_FONT_REGULAR, 8)
+        c.drawRightString(
+            x + width,
             y - 5*mm,
             "Напишите итоговый балл ПЕЧАТНЫМИ цифрами"
         )
@@ -218,13 +258,10 @@ class SheetGenerator:
 
     def _draw_answer_fields(self, c: canvas.Canvas):
         """Draw large answer grid with notebook-style grid."""
-        # Warning text with Cyrillic support
-        try:
-            c.setFont("DejaVuSans-Bold", 11)
-        except:
-            c.setFont("Helvetica-Bold", 11)
+        # Warning text with formal serif font
+        c.setFont(_FONT_BOLD, 11)
         c.setFillColor(colors.red)
-        warning_y = self.page_height - 60*mm  # Moved up by 30mm
+        warning_y = self.page_height - 60*mm
         c.drawCentredString(
             self.page_width / 2,
             warning_y,
@@ -232,11 +269,8 @@ class SheetGenerator:
         )
         c.setFillColor(colors.black)
 
-        # Large rectangle frame - adjusted position and height
-        frame_x = 20*mm
-        frame_y = self.page_height - 240*mm - 20*mm  # Moved up by 30mm
-        frame_width = self.page_width - 40*mm
-        frame_height = 165*mm + 20*mm  # Increased by 20mm (2cm)
+        # Get frame geometry from shared method
+        frame_x, frame_y, frame_width, frame_height = self._get_answer_frame_geometry()
 
         # Draw thick outer border
         c.setStrokeColor(colors.black)
@@ -246,7 +280,7 @@ class SheetGenerator:
         # Draw horizontal grid lines
         c.setLineWidth(0.5)
         c.setStrokeColor(colors.HexColor("#CCCCCC"))
-        line_spacing = 8*mm
+        line_spacing = 10*mm  # Increased from 8mm for better handwriting space
         num_h_lines = int(frame_height / line_spacing)
 
         for i in range(1, num_h_lines):
@@ -254,7 +288,7 @@ class SheetGenerator:
             c.line(frame_x, y, frame_x + frame_width, y)
 
         # Draw vertical grid lines for proper grid
-        col_spacing = 8*mm
+        col_spacing = 10*mm  # Increased from 8mm for better handwriting space
         num_v_lines = int(frame_width / col_spacing)
 
         for i in range(1, num_v_lines):
@@ -265,10 +299,7 @@ class SheetGenerator:
 
     def _draw_footer(self, c: canvas.Canvas):
         """Draw footer with instructions (no signature field)."""
-        try:
-            c.setFont("DejaVuSans", 8)
-        except:
-            c.setFont("Helvetica", 8)
+        c.setFont(_FONT_REGULAR, 8)
         c.setFillColor(colors.grey)
 
         footer_text = [

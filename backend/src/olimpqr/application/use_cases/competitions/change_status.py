@@ -29,7 +29,7 @@ class ChangeCompetitionStatusUseCase:
         # Get existing competition
         competition = await self.competition_repository.get_by_id(competition_id)
         if not competition:
-            raise ValueError(f"Competition with id {competition_id} not found")
+            raise ValueError(f"Олимпиада с id {competition_id} не найдена")
 
         # Use entity methods for status transitions
         if new_status == CompetitionStatus.REGISTRATION_OPEN:
@@ -41,7 +41,7 @@ class ChangeCompetitionStatusUseCase:
         elif new_status == CompetitionStatus.PUBLISHED:
             competition.publish_results()
         else:
-            raise ValueError(f"Invalid status transition to {new_status}")
+            raise ValueError(f"Недопустимый переход статуса к {new_status}")
 
         # Save to repository
         competition = await self.competition_repository.update(competition)

@@ -86,13 +86,13 @@ class ApproveAdmissionUseCase:
         token_hash = self.token_service.hash_token(raw_entry_token)
         entry_token = await self.entry_token_repo.get_by_token_hash(token_hash.value)
         if not entry_token:
-            raise ValueError("Token not found")
+            raise ValueError("Токен не найден")
         if entry_token.is_used:
-            raise ValueError("Token has already been used")
+            raise ValueError("Токен уже использован")
         if entry_token.is_expired:
-            raise ValueError("Token has expired")
+            raise ValueError("Срок действия токена истёк")
         if entry_token.registration_id != registration_id:
-            raise ValueError("Token does not match registration")
+            raise ValueError("Токен не соответствует регистрации")
 
         # 2. Mark entry token as used
         entry_token.use()
@@ -101,14 +101,14 @@ class ApproveAdmissionUseCase:
         # 3. Update registration status
         registration = await self.registration_repo.get_by_id(registration_id)
         if not registration:
-            raise ValueError("Registration not found")
+            raise ValueError("Регистрация не найдена")
         registration.admit()
         await self.registration_repo.update(registration)
 
         # 4. Get competition for variant count
         competition = await self.competition_repo.get_by_id(registration.competition_id)
         if not competition:
-            raise ValueError("Competition not found")
+            raise ValueError("Олимпиада не найдена")
 
         # 5. Assign random variant
         variant_number = random.randint(1, competition.variants_count)

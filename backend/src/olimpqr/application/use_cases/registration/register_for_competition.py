@@ -58,23 +58,23 @@ class RegisterForCompetitionUseCase:
         # Check participant exists
         participant = await self.participant_repository.get_by_id(participant_id)
         if not participant:
-            raise ValueError("Participant not found")
+            raise ValueError("Участник не найден")
 
         # Check competition exists
         competition = await self.competition_repository.get_by_id(competition_id)
         if not competition:
-            raise ValueError("Competition not found")
+            raise ValueError("Олимпиада не найдена")
 
         # Check registration is open
         if not competition.is_registration_open:
-            raise ValueError("Registration is not open for this competition")
+            raise ValueError("Регистрация на эту олимпиаду закрыта")
 
         # Check for duplicate registration
         existing = await self.registration_repository.get_by_participant_and_competition(
             participant_id, competition_id
         )
         if existing:
-            raise ValueError("Already registered for this competition")
+            raise ValueError("Вы уже зарегистрированы на эту олимпиаду")
 
         # Create registration
         registration = Registration(

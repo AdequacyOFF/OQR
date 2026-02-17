@@ -36,7 +36,7 @@ class QRService:
             PNG image bytes
         """
         if error_correction not in cls.ERROR_CORRECTION_LEVELS:
-            raise ValueError(f"Invalid error correction level: {error_correction}")
+            raise ValueError(f"Неверный уровень коррекции ошибок: {error_correction}")
 
         qr = qrcode.QRCode(
             version=None,  # Auto-size

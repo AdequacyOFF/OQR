@@ -60,7 +60,7 @@ class EntryTokenRepositoryImpl(EntryTokenRepository):
         )
         model = result.scalar_one_or_none()
         if not model:
-            raise ValueError(f"EntryToken with id {entity.id} not found")
+            raise ValueError(f"Токен допуска с id {entity.id} не найден")
 
         model.expires_at = entity.expires_at
         model.used_at = entity.used_at

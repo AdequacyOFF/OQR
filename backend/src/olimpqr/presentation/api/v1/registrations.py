@@ -50,7 +50,7 @@ async def register_for_competition(
         if not participant:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Participant profile not found"
+                detail="Профиль участника не найден"
             )
 
         # Create repositories
@@ -111,7 +111,7 @@ async def get_my_registrations(
     if not participant:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Participant profile not found"
+            detail="Профиль участника не найден"
         )
 
     # Get registrations
@@ -175,7 +175,7 @@ async def get_registration(
     if not participant:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Participant profile not found"
+            detail="Профиль участника не найден"
         )
 
     # Get registration
@@ -185,14 +185,14 @@ async def get_registration(
     if not registration:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Registration not found"
+            detail="Регистрация не найдена"
         )
 
     # Check ownership
     if registration.participant_id != participant.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied"
+            detail="Доступ запрещён"
         )
 
     # Get entry token if available
@@ -237,7 +237,7 @@ async def refresh_entry_token(
     if not participant:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Participant profile not found"
+            detail="Профиль участника не найден"
         )
 
     # Get registration
@@ -246,14 +246,14 @@ async def refresh_entry_token(
     if not registration:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Registration not found"
+            detail="Регистрация не найдена"
         )
 
     # Check ownership
     if registration.participant_id != participant.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied"
+            detail="Доступ запрещён"
         )
 
     # Get existing entry token
@@ -262,14 +262,14 @@ async def refresh_entry_token(
     if not entry_token:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Entry token not found"
+            detail="Входной токен не найден"
         )
 
     # Check if already used
     if entry_token.is_used:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot refresh token - admission already completed"
+            detail="Невозможно обновить токен - допуск уже завершён"
         )
 
     # Generate new token

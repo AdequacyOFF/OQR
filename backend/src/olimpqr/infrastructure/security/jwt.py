@@ -86,7 +86,7 @@ def verify_access_token(token: str) -> JWTPayload:
         exp = datetime.fromtimestamp(payload.get("exp"))
 
         if not email:
-            raise ValueError("Email not found in token")
+            raise ValueError("Email не найден в токене")
 
         return JWTPayload(
             user_id=user_id,
@@ -96,6 +96,6 @@ def verify_access_token(token: str) -> JWTPayload:
         )
 
     except InvalidTokenError as e:
-        raise InvalidTokenError(f"Invalid token: {str(e)}")
+        raise InvalidTokenError(f"Неверный токен: {str(e)}")
     except (KeyError, ValueError, TypeError) as e:
-        raise ValueError(f"Malformed token payload: {str(e)}")
+        raise ValueError(f"Некорректные данные токена: {str(e)}")

@@ -9,17 +9,17 @@ from ...domain.value_objects import UserRole
 class RegisterRequest(BaseModel):
     """Request schema for user registration (participant only)."""
     email: EmailStr
-    password: str = Field(..., min_length=8, description="Password must be at least 8 characters")
-    full_name: str = Field(..., min_length=2, description="Full name (required)")
-    school: str = Field(..., min_length=2, description="School name (required)")
-    grade: int = Field(..., ge=1, le=12, description="Grade 1-12 (required)")
+    password: str = Field(..., min_length=8, description="Пароль должен быть не менее 8 символов")
+    full_name: str = Field(..., min_length=2, description="ФИО (обязательно)")
+    school: str = Field(..., min_length=2, description="Название школы (обязательно)")
+    grade: int = Field(..., ge=1, le=12, description="Класс 1-12 (обязательно)")
 
     @field_validator("password")
     @classmethod
     def validate_password(cls, v: str) -> str:
         """Validate password strength."""
         if len(v) < 8:
-            raise ValueError("Password must be at least 8 characters")
+            raise ValueError("Пароль должен быть не менее 8 символов")
         return v
 
     model_config = {

@@ -34,7 +34,7 @@ class TokenService:
             secret_key: Secret key for HMAC (should be different from JWT secret)
         """
         if not secret_key or len(secret_key) < 32:
-            raise ValueError("Secret key must be at least 32 characters")
+            raise ValueError("Секретный ключ должен быть не менее 32 символов")
         self.secret_key = secret_key.encode('utf-8')
 
     def generate_token(self, size_bytes: int = 32) -> Token:

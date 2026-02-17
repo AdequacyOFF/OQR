@@ -34,10 +34,10 @@ async def get_published_results(
     )
     competition = result.scalar_one_or_none()
     if not competition:
-        raise HTTPException(status_code=404, detail="Competition not found")
+        raise HTTPException(status_code=404, detail="Олимпиада не найдена")
 
     if competition.status != CompetitionStatus.PUBLISHED:
-        raise HTTPException(status_code=403, detail="Results not yet published")
+        raise HTTPException(status_code=403, detail="Результаты ещё не опубликованы")
 
     # Query attempts with participant info, sorted by score
     stmt = (

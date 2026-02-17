@@ -32,9 +32,9 @@ class ParticipantProfileResponse(BaseModel):
 
 class UpdateProfileRequest(BaseModel):
     """Request to update participant profile."""
-    full_name: str = Field(min_length=2, description="Full name (at least 2 characters)")
-    school: str = Field(min_length=2, description="School name (at least 2 characters)")
-    grade: int = Field(ge=1, le=12, description="Grade (1-12)")
+    full_name: str = Field(min_length=2, description="ФИО (минимум 2 символа)")
+    school: str = Field(min_length=2, description="Название школы (минимум 2 символа)")
+    grade: int = Field(ge=1, le=12, description="Класс (1-12)")
 
     model_config = {
         "json_schema_extra": {

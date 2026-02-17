@@ -59,7 +59,7 @@ class ParticipantRepositoryImpl(ParticipantRepository):
         )
         model = result.scalar_one_or_none()
         if not model:
-            raise ValueError(f"Participant with id {entity.id} not found")
+            raise ValueError(f"Участник с id {entity.id} не найден")
 
         model.full_name = entity.full_name
         model.school = entity.school

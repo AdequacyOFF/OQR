@@ -55,25 +55,25 @@ class GetEntryQRUseCase:
         # Get registration
         registration = await self.registration_repository.get_by_id(registration_id)
         if not registration:
-            raise ValueError("Registration not found")
+            raise ValueError("Регистрация не найдена")
 
         # Get participant
         participant = await self.participant_repository.get_by_id(registration.participant_id)
         if not participant:
-            raise ValueError("Participant not found")
+            raise ValueError("Участник не найден")
 
         # Verify ownership
         if participant.user_id != user_id:
-            raise ValueError("Access denied: not your registration")
+            raise ValueError("Доступ запрещён: это не ваша регистрация")
 
         # Get entry token
         entry_token = await self.entry_token_repository.get_by_registration(registration_id)
         if not entry_token:
-            raise ValueError("Entry token not found")
+            raise ValueError("Токен допуска не найден")
 
         # Note: We don't expose the raw token from DB (it's not stored)
         # The QR code was already generated during registration
         # This endpoint should return error - token can only be retrieved once during registration
         
         # For now, raise error - in production, token should be stored temporarily or returned only once
-        raise ValueError("Entry token can only be retrieved during registration. Please contact administrator.")
+        raise ValueError("Токен допуска можно получить только во время регистрации. Обратитесь к администратору.")

@@ -136,13 +136,13 @@ async def download_answer_sheet(
         if not attempt:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Attempt not found",
+                detail="Попытка не найдена",
             )
 
         if not attempt.pdf_file_path:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="PDF file not found for this attempt",
+                detail="PDF файл не найден для этой попытки",
             )
 
         # Download from MinIO
@@ -163,5 +163,5 @@ async def download_answer_sheet(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to download PDF: {str(e)}",
+            detail=f"Не удалось скачать PDF: {str(e)}",
         )

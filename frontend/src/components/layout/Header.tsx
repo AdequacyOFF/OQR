@@ -46,7 +46,7 @@ const Header: React.FC = () => {
     <header className="header">
       <div className="header-inner">
         <Link to="/" className="header-logo-container">
-          <img src={logoBlue} alt="Logo" className="header-logo-image" />
+          <img src={logoBlue} alt="Логотип" className="header-logo-image" />
           <span className="header-logo-text">OlimpQR</span>
         </Link>
         <nav className="header-nav">

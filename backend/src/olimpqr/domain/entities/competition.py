@@ -40,39 +40,39 @@ class Competition:
 
     def __post_init__(self):
         if not self.name or len(self.name.strip()) < 3:
-            raise ValueError("Competition name must be at least 3 characters")
+            raise ValueError("Название олимпиады должно быть не менее 3 символов")
         if self.registration_start >= self.registration_end:
-            raise ValueError("Registration start must be before registration end")
+            raise ValueError("Начало регистрации должно быть раньше окончания")
         if self.variants_count < 1:
-            raise ValueError("Must have at least one variant")
+            raise ValueError("Должен быть хотя бы один вариант")
         if self.max_score < 1:
-            raise ValueError("Max score must be positive")
+            raise ValueError("Максимальный балл должен быть положительным")
 
     def open_registration(self):
         """Open registration for participants."""
         if self.status != CompetitionStatus.DRAFT:
-            raise ValueError("Can only open registration from draft status")
+            raise ValueError("Открыть регистрацию можно только из статуса черновик")
         self.status = CompetitionStatus.REGISTRATION_OPEN
         self.updated_at = datetime.utcnow()
 
     def start_competition(self):
         """Start the competition (admission begins)."""
         if self.status != CompetitionStatus.REGISTRATION_OPEN:
-            raise ValueError("Can only start from registration_open status")
+            raise ValueError("Начать можно только из статуса открытая регистрация")
         self.status = CompetitionStatus.IN_PROGRESS
         self.updated_at = datetime.utcnow()
 
     def start_checking(self):
         """Move to checking phase (all submissions in, scoring begins)."""
         if self.status != CompetitionStatus.IN_PROGRESS:
-            raise ValueError("Can only start checking from in_progress status")
+            raise ValueError("Начать проверку можно только из статуса в процессе")
         self.status = CompetitionStatus.CHECKING
         self.updated_at = datetime.utcnow()
 
     def publish_results(self):
         """Publish competition results to participants."""
         if self.status != CompetitionStatus.CHECKING:
-            raise ValueError("Can only publish from checking status")
+            raise ValueError("Опубликовать можно только из статуса проверка")
         self.status = CompetitionStatus.PUBLISHED
         self.updated_at = datetime.utcnow()
 

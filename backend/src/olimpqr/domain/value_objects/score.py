@@ -18,13 +18,13 @@ class Score:
 
     def __post_init__(self):
         if self.value < 0:
-            raise ValueError("Score cannot be negative")
+            raise ValueError("Балл не может быть отрицательным")
         if self.max_value <= 0:
-            raise ValueError("Max value must be positive")
+            raise ValueError("Максимальное значение должно быть положительным")
         if self.value > self.max_value:
-            raise ValueError(f"Score {self.value} exceeds maximum {self.max_value}")
+            raise ValueError(f"Балл {self.value} превышает максимум {self.max_value}")
         if self.confidence is not None and not (0.0 <= self.confidence <= 1.0):
-            raise ValueError("Confidence must be between 0.0 and 1.0")
+            raise ValueError("Уверенность должна быть от 0.0 до 1.0")
 
     @property
     def percentage(self) -> float:

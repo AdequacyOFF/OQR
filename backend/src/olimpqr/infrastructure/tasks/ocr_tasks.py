@@ -73,7 +73,7 @@ def process_scan_ocr(self, scan_id: str) -> dict:
         # 1. Load scan from DB
         scan_model = session.get(ScanModel, scan_uuid)
         if not scan_model:
-            return {"scan_id": scan_id, "status": "error", "message": "Scan not found"}
+            return {"scan_id": scan_id, "status": "error", "message": "Скан не найден"}
 
         # 2. Download image from MinIO
         image_bytes = storage.download_file(

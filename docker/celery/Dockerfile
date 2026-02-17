@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y \
     libgomp1 \
     zbar-tools \
     libzbar0 \
+    fonts-liberation \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Poetry

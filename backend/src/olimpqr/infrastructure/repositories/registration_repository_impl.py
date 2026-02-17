@@ -58,7 +58,7 @@ class RegistrationRepositoryImpl(RegistrationRepository):
         )
         model = result.scalar_one_or_none()
         if not model:
-            raise ValueError(f"Registration with id {entity.id} not found")
+            raise ValueError(f"Регистрация с id {entity.id} не найдена")
 
         model.status = entity.status
         model.updated_at = entity.updated_at

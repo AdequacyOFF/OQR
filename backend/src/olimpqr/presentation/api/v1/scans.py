@@ -47,15 +47,15 @@ async def upload_scan(
     # Validate file type
     allowed = {"image/png", "image/jpeg", "image/jpg", "application/pdf"}
     if file.content_type not in allowed:
-        raise HTTPException(status_code=400, detail=f"Unsupported file type: {file.content_type}")
+        raise HTTPException(status_code=400, detail=f"Неподдерживаемый тип файла: {file.content_type}")
 
     # Read file with size limit
     MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
     file_data = await file.read()
     if len(file_data) == 0:
-        raise HTTPException(status_code=400, detail="Empty file")
+        raise HTTPException(status_code=400, detail="Пустой файл")
     if len(file_data) > MAX_FILE_SIZE:
-        raise HTTPException(status_code=413, detail="File too large. Maximum size is 50MB")
+        raise HTTPException(status_code=413, detail="Файл слишком большой. Максимальный размер 50МБ")
 
     # Upload to MinIO
     scan_id = uuid4()
@@ -132,7 +132,7 @@ async def get_scan(
     scan_repo = ScanRepositoryImpl(db)
     scan = await scan_repo.get_by_id(scan_id)
     if not scan:
-        raise HTTPException(status_code=404, detail="Scan not found")
+        raise HTTPException(status_code=404, detail="Скан не найден")
 
     return ScanResponse(
         id=scan.id,
@@ -163,11 +163,11 @@ async def verify_scan_score(
 
     scan = await scan_repo.get_by_id(scan_id)
     if not scan:
-        raise HTTPException(status_code=404, detail="Scan not found")
+        raise HTTPException(status_code=404, detail="Скан не найден")
 
     # Check if scan has linked attempt
     if not scan.attempt_id:
-        raise HTTPException(status_code=400, detail="Scan is not linked to any attempt. QR code not yet recognized.")
+        raise HTTPException(status_code=400, detail="Скан не привязан к попытке. QR-код ещё не распознан.")
 
     # Verify and correct scan
     scan.verify(verified_by=current_user.id, corrected_score=body.corrected_score)
@@ -176,7 +176,7 @@ async def verify_scan_score(
     # Apply score to attempt
     attempt = await attempt_repo.get_by_id(scan.attempt_id)
     if not attempt:
-        raise HTTPException(status_code=404, detail="Attempt not found")
+        raise HTTPException(status_code=404, detail="Попытка не найдена")
 
     attempt.apply_score(score=body.corrected_score, confidence=None)
     await attempt_repo.update(attempt)
@@ -215,7 +215,7 @@ async def apply_score(
 
     attempt = await attempt_repo.get_by_id(attempt_id)
     if not attempt:
-        raise HTTPException(status_code=404, detail="Attempt not found")
+        raise HTTPException(status_code=404, detail="Попытка не найдена")
 
     try:
         attempt.apply_score(score=body.score, confidence=None)

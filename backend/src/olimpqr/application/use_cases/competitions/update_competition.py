@@ -30,7 +30,7 @@ class UpdateCompetitionUseCase:
         # Get existing competition
         competition = await self.competition_repository.get_by_id(competition_id)
         if not competition:
-            raise ValueError(f"Competition with id {competition_id} not found")
+            raise ValueError(f"Олимпиада с id {competition_id} не найдена")
 
         # Update fields if provided
         if dto.name is not None:

@@ -34,14 +34,14 @@ class RegisterUserUseCase:
         """
         # Check if email already exists
         if await self.user_repository.exists_by_email(dto.email):
-            raise ValueError(f"User with email {dto.email} already exists")
+            raise ValueError(f"Пользователь с email {dto.email} уже существует")
 
         # Validate participant-specific fields
         if dto.role == UserRole.PARTICIPANT:
             if not dto.full_name or not dto.school or dto.grade is None:
-                raise ValueError("Participant registration requires full_name, school, and grade")
+                raise ValueError("Для регистрации участника требуется ФИО, школа и класс")
             if not (1 <= dto.grade <= 12):
-                raise ValueError("Grade must be between 1 and 12")
+                raise ValueError("Класс должен быть от 1 до 12")
 
         # Hash password
         password_hash = hash_password(dto.password)

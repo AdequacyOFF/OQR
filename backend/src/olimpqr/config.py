@@ -53,9 +53,11 @@ class Settings(BaseSettings):
         description="CORS allowed origins"
     )
 
-    # OCR Settings
-    ocr_score_field_x: int = Field(default=150, description="Score field X coordinate (mm)")
-    ocr_score_field_y: int = Field(default=250, description="Score field Y coordinate (mm)")
+    # OCR Settings - Score field position in bottom-right of answer frame
+    # Calculated: x = 20 + 170 - 10 - 40 = 140mm from left
+    # y = 297 - (37 + 10 + 5) = 245mm from top (where 37mm is frame bottom from page bottom)
+    ocr_score_field_x: int = Field(default=140, description="Score field X coordinate (mm)")
+    ocr_score_field_y: int = Field(default=245, description="Score field Y coordinate (mm)")
     ocr_score_field_width: int = Field(default=40, description="Score field width (mm)")
     ocr_score_field_height: int = Field(default=15, description="Score field height (mm)")
     ocr_confidence_threshold: float = Field(default=0.7, description="OCR confidence threshold for auto-apply")

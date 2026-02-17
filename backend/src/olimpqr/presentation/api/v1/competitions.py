@@ -138,7 +138,7 @@ async def get_competition(
         if not competition:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Competition with id {competition_id} not found"
+                detail=f"Олимпиада с id {competition_id} не найдена"
             )
 
         # Return response
@@ -213,7 +213,7 @@ async def delete_competition(
         if not deleted:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Competition with id {competition_id} not found"
+                detail=f"Олимпиада с id {competition_id} не найдена"
             )
 
     except ValueError as e:

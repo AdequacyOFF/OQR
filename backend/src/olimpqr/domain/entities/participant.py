@@ -28,27 +28,27 @@ class Participant:
 
     def __post_init__(self):
         if not self.full_name or len(self.full_name.strip()) < 2:
-            raise ValueError("Full name must be at least 2 characters")
+            raise ValueError("ФИО должно быть не менее 2 символов")
         if not self.school or len(self.school.strip()) < 2:
-            raise ValueError("School name must be at least 2 characters")
+            raise ValueError("Название школы должно быть не менее 2 символов")
         if not (1 <= self.grade <= 12):
-            raise ValueError("Grade must be between 1 and 12")
+            raise ValueError("Класс должен быть от 1 до 12")
 
     def update_profile(self, full_name: str | None = None, school: str | None = None, grade: int | None = None):
         """Update participant profile."""
         if full_name is not None:
             if len(full_name.strip()) < 2:
-                raise ValueError("Full name must be at least 2 characters")
+                raise ValueError("ФИО должно быть не менее 2 символов")
             self.full_name = full_name
 
         if school is not None:
             if len(school.strip()) < 2:
-                raise ValueError("School name must be at least 2 characters")
+                raise ValueError("Название школы должно быть не менее 2 символов")
             self.school = school
 
         if grade is not None:
             if not (1 <= grade <= 12):
-                raise ValueError("Grade must be between 1 and 12")
+                raise ValueError("Класс должен быть от 1 до 12")
             self.grade = grade
 
         self.updated_at = datetime.utcnow()

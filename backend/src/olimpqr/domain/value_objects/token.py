@@ -13,9 +13,9 @@ class TokenHash:
 
     def __post_init__(self):
         if not self.value:
-            raise ValueError("Token hash cannot be empty")
+            raise ValueError("Хэш токена не может быть пустым")
         if len(self.value) != 64:  # SHA256 hex digest length
-            raise ValueError("Invalid token hash length")
+            raise ValueError("Неверная длина хэша токена")
 
 
 @dataclass(frozen=True)
@@ -30,6 +30,6 @@ class Token:
 
     def __post_init__(self):
         if not self.raw:
-            raise ValueError("Token raw value cannot be empty")
+            raise ValueError("Значение токена не может быть пустым")
         if not isinstance(self.hash, TokenHash):
             raise TypeError("hash must be a TokenHash instance")

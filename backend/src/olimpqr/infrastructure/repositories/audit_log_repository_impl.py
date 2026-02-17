@@ -60,7 +60,7 @@ class AuditLogRepositoryImpl(AuditLogRepository):
         )
         model = result.scalar_one_or_none()
         if not model:
-            raise ValueError(f"AuditLog with id {entity.id} not found")
+            raise ValueError(f"Запись журнала с id {entity.id} не найдена")
 
         # Only allow updating details in case of correction
         model.details = entity.details

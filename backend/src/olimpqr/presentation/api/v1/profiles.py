@@ -35,7 +35,7 @@ async def get_my_profile(
     if not participant:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Participant profile not found"
+            detail="Профиль участника не найден"
         )
 
     return ParticipantProfileResponse(
@@ -67,7 +67,7 @@ async def update_my_profile(
     if not participant:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Participant profile not found"
+            detail="Профиль участника не найден"
         )
 
     # Update profile using entity method

@@ -31,9 +31,9 @@ class AuditLog:
 
     def __post_init__(self):
         if not self.entity_type:
-            raise ValueError("Entity type cannot be empty")
+            raise ValueError("Тип сущности не может быть пустым")
         if not self.action:
-            raise ValueError("Action cannot be empty")
+            raise ValueError("Действие не может быть пустым")
 
     @classmethod
     def create_log(

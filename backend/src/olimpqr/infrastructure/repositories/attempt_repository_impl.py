@@ -63,7 +63,7 @@ class AttemptRepositoryImpl(AttemptRepository):
         )
         model = result.scalar_one_or_none()
         if not model:
-            raise ValueError(f"Attempt with id {entity.id} not found")
+            raise ValueError(f"Попытка с id {entity.id} не найдена")
 
         model.status = entity.status
         model.score_total = entity.score_total

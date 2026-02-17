@@ -63,7 +63,7 @@ class VerifyEntryQRUseCase:
             ValueError: If token is invalid, expired, or already used
         """
         if not raw_token:
-            raise ValueError("Token cannot be empty")
+            raise ValueError("Токен не может быть пустым")
 
         # 1. Compute hash
         token_hash = self.token_service.hash_token(raw_token)
@@ -71,28 +71,28 @@ class VerifyEntryQRUseCase:
         # 2. Find entry token by hash
         entry_token = await self.entry_token_repo.get_by_token_hash(token_hash.value)
         if not entry_token:
-            raise ValueError("Token not found")
+            raise ValueError("Токен не найден")
 
         # 3. Check expiry
         if entry_token.is_expired:
-            raise ValueError("Token has expired")
+            raise ValueError("Срок действия токена истёк")
 
         # 4. Check if already used
         if entry_token.is_used:
-            raise ValueError("Token has already been used")
+            raise ValueError("Токен уже использован")
 
         # 5. Get registration, participant, competition
         registration = await self.registration_repo.get_by_id(entry_token.registration_id)
         if not registration:
-            raise ValueError("Registration not found")
+            raise ValueError("Регистрация не найдена")
 
         participant = await self.participant_repo.get_by_id(registration.participant_id)
         if not participant:
-            raise ValueError("Participant not found")
+            raise ValueError("Участник не найден")
 
         competition = await self.competition_repo.get_by_id(registration.competition_id)
         if not competition:
-            raise ValueError("Competition not found")
+            raise ValueError("Олимпиада не найдена")
 
         # 6. Check competition is in progress (admission allowed)
         if not competition.is_in_progress:
@@ -104,7 +104,7 @@ class VerifyEntryQRUseCase:
                 competition_name=competition.name,
                 competition_id=competition.id,
                 can_proceed=False,
-                message=f"Competition is not in progress (status: {competition.status.value})",
+                message=f"Олимпиада не в процессе (статус: {competition.status.value})",
             )
 
         return VerifyEntryQRResult(
@@ -115,5 +115,5 @@ class VerifyEntryQRUseCase:
             competition_name=competition.name,
             competition_id=competition.id,
             can_proceed=True,
-            message="Participant verified. Proceed with admission.",
+            message="Участник подтверждён. Можно выдать бланк.",
         )

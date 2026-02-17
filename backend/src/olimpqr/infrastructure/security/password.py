@@ -16,7 +16,7 @@ def hash_password(password: str) -> str:
         ValueError: If password is empty
     """
     if not password:
-        raise ValueError("Password cannot be empty")
+        raise ValueError("Пароль не может быть пустым")
     pwd_bytes = password.encode("utf-8")
     salt = bcrypt.gensalt()
     hashed = bcrypt.hashpw(pwd_bytes, salt)

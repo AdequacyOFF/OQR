@@ -57,9 +57,9 @@ class EntryToken:
     def use(self):
         """Mark token as used (one-time use)."""
         if self.used_at is not None:
-            raise ValueError("Token has already been used")
+            raise ValueError("Токен уже использован")
         if self.is_expired:
-            raise ValueError("Token has expired")
+            raise ValueError("Срок действия токена истёк")
         self.used_at = datetime.utcnow()
 
     @property

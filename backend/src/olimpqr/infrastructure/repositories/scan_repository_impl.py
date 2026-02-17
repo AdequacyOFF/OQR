@@ -62,7 +62,7 @@ class ScanRepositoryImpl(ScanRepository):
         )
         model = result.scalar_one_or_none()
         if not model:
-            raise ValueError(f"Scan with id {entity.id} not found")
+            raise ValueError(f"Скан с id {entity.id} не найден")
 
         model.ocr_score = entity.ocr_score
         model.ocr_confidence = entity.ocr_confidence

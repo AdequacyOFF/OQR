@@ -60,7 +60,7 @@ class UserRepositoryImpl(UserRepository):
         )
         model = result.scalar_one_or_none()
         if not model:
-            raise ValueError(f"User with id {entity.id} not found")
+            raise ValueError(f"Пользователь с id {entity.id} не найден")
 
         model.email = entity.email
         model.password_hash = entity.password_hash

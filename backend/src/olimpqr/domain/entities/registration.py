@@ -29,21 +29,21 @@ class Registration:
     def admit(self):
         """Mark participant as admitted (entry QR verified)."""
         if self.status != RegistrationStatus.PENDING:
-            raise ValueError("Can only admit from pending status")
+            raise ValueError("Допустить можно только из статуса ожидание")
         self.status = RegistrationStatus.ADMITTED
         self.updated_at = datetime.utcnow()
 
     def complete(self):
         """Mark registration as completed (answer sheet generated)."""
         if self.status != RegistrationStatus.ADMITTED:
-            raise ValueError("Can only complete from admitted status")
+            raise ValueError("Завершить можно только из статуса допущен")
         self.status = RegistrationStatus.COMPLETED
         self.updated_at = datetime.utcnow()
 
     def cancel(self):
         """Cancel the registration."""
         if self.status == RegistrationStatus.CANCELLED:
-            raise ValueError("Registration is already cancelled")
+            raise ValueError("Регистрация уже отменена")
         self.status = RegistrationStatus.CANCELLED
         self.updated_at = datetime.utcnow()
 

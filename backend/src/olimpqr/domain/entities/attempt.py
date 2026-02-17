@@ -38,12 +38,12 @@ class Attempt:
         if not isinstance(self.sheet_token_hash, TokenHash):
             raise TypeError("sheet_token_hash must be a TokenHash instance")
         if self.variant_number < 1:
-            raise ValueError("Variant number must be positive")
+            raise ValueError("Номер варианта должен быть положительным")
 
     def mark_scanned(self):
         """Mark attempt as scanned (scan uploaded, OCR processing)."""
         if self.status != AttemptStatus.PRINTED:
-            raise ValueError("Can only scan printed attempts")
+            raise ValueError("Сканировать можно только напечатанные попытки")
         self.status = AttemptStatus.SCANNED
         self.updated_at = datetime.utcnow()
 
@@ -55,11 +55,11 @@ class Attempt:
             confidence: OCR confidence (None if manually entered)
         """
         if not self.status.can_apply_score:
-            raise ValueError(f"Cannot apply score in status {self.status}")
+            raise ValueError(f"Невозможно применить балл в статусе {self.status}")
         if score < 0:
-            raise ValueError("Score cannot be negative")
+            raise ValueError("Балл не может быть отрицательным")
         if confidence is not None and not (0.0 <= confidence <= 1.0):
-            raise ValueError("Confidence must be between 0.0 and 1.0")
+            raise ValueError("Уверенность должна быть от 0.0 до 1.0")
 
         self.score_total = score
         self.confidence = confidence
@@ -69,7 +69,7 @@ class Attempt:
     def publish(self):
         """Publish attempt (make visible in results)."""
         if not self.status.has_score:
-            raise ValueError("Cannot publish attempt without score")
+            raise ValueError("Невозможно опубликовать попытку без балла")
         self.status = AttemptStatus.PUBLISHED
         self.updated_at = datetime.utcnow()
 
