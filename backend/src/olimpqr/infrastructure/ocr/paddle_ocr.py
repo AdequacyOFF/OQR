@@ -10,6 +10,42 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
+
+def _pdf_bytes_to_image_bytes(pdf_bytes: bytes) -> Optional[bytes]:
+    """Convert first page of a PDF to PNG image bytes.
+
+    Uses pdf2image (poppler) if available, otherwise falls back to
+    PyMuPDF (fitz).
+    """
+    try:
+        import fitz  # PyMuPDF
+        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+        page = doc[0]
+        # Render at 300 DPI
+        pix = page.get_pixmap(dpi=300)
+        png_bytes = pix.tobytes("png")
+        doc.close()
+        return png_bytes
+    except ImportError:
+        pass
+    except Exception as e:
+        logger.warning("PyMuPDF PDF conversion failed: %s", e)
+
+    try:
+        from pdf2image import convert_from_bytes
+        images = convert_from_bytes(pdf_bytes, dpi=300, first_page=1, last_page=1)
+        if images:
+            from io import BytesIO
+            buf = BytesIO()
+            images[0].save(buf, format="PNG")
+            return buf.getvalue()
+    except ImportError:
+        pass
+    except Exception as e:
+        logger.warning("pdf2image PDF conversion failed: %s", e)
+
+    return None
+
 # DPI of generated PDF sheets (ReportLab default is 72 dpi)
 PDF_DPI = 72
 # Typical scan DPI
@@ -73,9 +109,14 @@ class PaddleOCRService:
             OCRResult with score, confidence and raw text
         """
         try:
-            # 1. Decode image
+            # 1. Decode image (try PDF conversion if regular decode fails)
             np_arr = np.frombuffer(image_bytes, np.uint8)
             image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+            if image is None:
+                png_bytes = _pdf_bytes_to_image_bytes(image_bytes)
+                if png_bytes:
+                    np_arr = np.frombuffer(png_bytes, np.uint8)
+                    image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
             if image is None:
                 return OCRResult(score=None, confidence=0.0, raw_text="Failed to decode image")
 
@@ -144,6 +185,11 @@ class PaddleOCRService:
 
             np_arr = np.frombuffer(image_bytes, np.uint8)
             image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+            if image is None:
+                png_bytes = _pdf_bytes_to_image_bytes(image_bytes)
+                if png_bytes:
+                    np_arr = np.frombuffer(png_bytes, np.uint8)
+                    image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
             if image is None:
                 return None
 

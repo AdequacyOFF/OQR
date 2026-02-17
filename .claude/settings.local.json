@@ -32,7 +32,10 @@
       "Bash(find:*)",
       "Bash(PYTHONPATH=src python3:*)",
       "Bash(docker-compose:*)",
-      "Bash(docker cp:*)"
+      "Bash(docker cp:*)",
+      "Bash(for pw in \"admin\" \"Admin123\" \"admin123\" \"12345678\" \"password\" \"Admin12345\" \"qwerty123\")",
+      "Bash(do echo \"Trying: $pw\")",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []

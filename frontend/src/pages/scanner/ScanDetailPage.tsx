@@ -15,6 +15,7 @@ const ScanDetailPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [correctedScore, setCorrectedScore] = useState<string>('');
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const loadScan = async () => {
@@ -24,6 +25,14 @@ const ScanDetailPage: React.FC = () => {
         if (data.ocr_score !== null) {
           setCorrectedScore(String(data.ocr_score));
         }
+        // Load scan image
+        try {
+          const imgResp = await api.get(`scans/${id}/image`, { responseType: 'blob' });
+          const url = URL.createObjectURL(imgResp.data as Blob);
+          setImageUrl(url);
+        } catch {
+          // Image may not be available yet
+        }
       } catch {
         setError('Не удалось загрузить скан.');
       } finally {
@@ -32,6 +41,9 @@ const ScanDetailPage: React.FC = () => {
     };
 
     loadScan();
+    return () => {
+      if (imageUrl) URL.revokeObjectURL(imageUrl);
+    };
   }, [id]);
 
   const handleVerify = async () => {
@@ -126,6 +138,25 @@ const ScanDetailPage: React.FC = () => {
           </tbody>
         </table>
       </div>
+
+      {imageUrl && (
+        <div className="card mb-16">
+          <h2 className="mb-16">Изображение скана</h2>
+          {scan.file_path.endsWith('.pdf') ? (
+            <iframe
+              src={imageUrl}
+              style={{ width: '100%', height: '80vh', border: 'none', borderRadius: 6 }}
+              title="Скан PDF"
+            />
+          ) : (
+            <img
+              src={imageUrl}
+              alt="Скан"
+              style={{ maxWidth: '100%', borderRadius: 6 }}
+            />
+          )}
+        </div>
+      )}
 
       {scan.ocr_raw_text && (
         <div className="card mb-16">

@@ -205,8 +205,7 @@ class SheetGenerator:
     def _draw_score_field(self, c: canvas.Canvas):
         """Draw score field in bottom-right corner of answer frame for OCR.
 
-        Position is calculated dynamically from the answer frame geometry
-        with 10mm margins from frame borders.
+        Position: 13mm from bottom edge of the sheet, right-aligned in the frame.
 
         CRITICAL: These coordinates must match OCR settings!
         Update config.py defaults if frame geometry changes.
@@ -218,16 +217,12 @@ class SheetGenerator:
         width = settings.ocr_score_field_width * mm
         height = settings.ocr_score_field_height * mm
 
-        # Calculate position: bottom-right corner with 10mm margins
-        margin = 10*mm
-        helper_text_space = 5*mm  # Space for helper text below the box
-
         # X position: right-aligned with 10mm margin from frame right edge
+        margin = 10*mm
         x = frame_x + frame_width - margin - width
 
-        # Y position: bottom-aligned with 10mm margin from frame bottom
-        # Account for helper text below the box
-        y = frame_y + margin + helper_text_space
+        # Y position: 13mm from bottom edge of the sheet
+        y = 13*mm
 
         # Draw thick border for OCR detection
         c.setStrokeColor(colors.black)

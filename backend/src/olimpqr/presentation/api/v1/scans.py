@@ -3,6 +3,7 @@
 from typing import Annotated, Optional
 from uuid import UUID, uuid4
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
+from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ....infrastructure.database import get_db
@@ -145,6 +146,43 @@ async def get_scan(
         uploaded_by=scan.uploaded_by,
         created_at=scan.created_at,
         updated_at=scan.updated_at,
+    )
+
+
+@router.get("/{scan_id}/image")
+async def get_scan_image(
+    scan_id: UUID,
+    current_user: User = Depends(require_role(UserRole.SCANNER, UserRole.ADMIN)),
+    db: AsyncSession = Depends(get_db),
+):
+    """Download the scan image file."""
+    scan_repo = ScanRepositoryImpl(db)
+    scan = await scan_repo.get_by_id(scan_id)
+    if not scan:
+        raise HTTPException(status_code=404, detail="Скан не найден")
+
+    storage = MinIOStorage()
+    try:
+        file_bytes = storage.download_file(
+            bucket=settings.minio_bucket_scans,
+            object_name=scan.file_path,
+        )
+    except Exception:
+        raise HTTPException(status_code=404, detail="Файл скана не найден в хранилище")
+
+    ext = scan.file_path.rsplit(".", 1)[-1].lower() if "." in scan.file_path else "png"
+    content_type_map = {
+        "png": "image/png",
+        "jpg": "image/jpeg",
+        "jpeg": "image/jpeg",
+        "pdf": "application/pdf",
+    }
+    content_type = content_type_map.get(ext, "application/octet-stream")
+
+    return Response(
+        content=file_bytes,
+        media_type=content_type,
+        headers={"Content-Disposition": f'inline; filename="scan-{scan_id}.{ext}"'},
     )
 
 
