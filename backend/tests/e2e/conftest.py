@@ -8,6 +8,8 @@ from tests.integration.conftest import (
     db_session,
     admin_user,
     participant_user,
+    invigilator_user,
+    institution,
     make_auth_header,
 )
 
@@ -17,5 +19,7 @@ __all__ = [
     "db_session",
     "admin_user",
     "participant_user",
+    "invigilator_user",
+    "institution",
     "make_auth_header",
 ]

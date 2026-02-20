@@ -1,5 +1,6 @@
 """Auth-related Pydantic schemas."""
 
+import datetime as dt
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from uuid import UUID
 
@@ -12,7 +13,9 @@ class RegisterRequest(BaseModel):
     password: str = Field(..., min_length=8, description="Пароль должен быть не менее 8 символов")
     full_name: str = Field(..., min_length=2, description="ФИО (обязательно)")
     school: str = Field(..., min_length=2, description="Название школы (обязательно)")
-    grade: int = Field(..., ge=1, le=12, description="Класс 1-12 (обязательно)")
+    grade: int | None = Field(None, ge=1, le=12, description="Класс 1-12 (опционально)")
+    institution_id: UUID | None = Field(None, description="ID учебного учреждения")
+    dob: dt.date | None = Field(None, description="Дата рождения")
 
     @field_validator("password")
     @classmethod

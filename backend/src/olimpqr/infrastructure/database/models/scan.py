@@ -11,6 +11,7 @@ from ..base import Base
 
 if TYPE_CHECKING:
     from .attempt import AttemptModel
+    from .answer_sheet import AnswerSheetModel
     from .user import UserModel
 
 
@@ -29,6 +30,11 @@ class ScanModel(Base):
     )
     attempt_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         ForeignKey("attempts.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True
+    )
+    answer_sheet_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        ForeignKey("answer_sheets.id", ondelete="SET NULL"),
         nullable=True,
         index=True
     )
@@ -71,6 +77,11 @@ class ScanModel(Base):
     # Relationships
     attempt: Mapped[Optional["AttemptModel"]] = relationship(
         "AttemptModel",
+        back_populates="scans",
+        lazy="selectin"
+    )
+    answer_sheet: Mapped[Optional["AnswerSheetModel"]] = relationship(
+        "AnswerSheetModel",
         back_populates="scans",
         lazy="selectin"
     )

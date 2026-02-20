@@ -1,5 +1,6 @@
 """Verify entry QR code use case."""
 
+import datetime as dt
 from uuid import UUID
 from dataclasses import dataclass
 
@@ -8,6 +9,8 @@ from ....domain.repositories import (
     RegistrationRepository,
     ParticipantRepository,
     CompetitionRepository,
+    InstitutionRepository,
+    DocumentRepository,
 )
 from ....domain.services import TokenService
 
@@ -16,6 +19,7 @@ from ....domain.services import TokenService
 class VerifyEntryQRResult:
     """Result of entry QR verification."""
     registration_id: UUID
+    participant_id: UUID
     participant_name: str
     participant_school: str
     participant_grade: int
@@ -23,6 +27,9 @@ class VerifyEntryQRResult:
     competition_id: UUID
     can_proceed: bool
     message: str
+    institution_name: str | None = None
+    dob: dt.date | None = None
+    has_documents: bool = False
 
 
 class VerifyEntryQRUseCase:
@@ -43,25 +50,18 @@ class VerifyEntryQRUseCase:
         registration_repository: RegistrationRepository,
         participant_repository: ParticipantRepository,
         competition_repository: CompetitionRepository,
+        institution_repository: InstitutionRepository | None = None,
+        document_repository: DocumentRepository | None = None,
     ):
         self.token_service = token_service
         self.entry_token_repo = entry_token_repository
         self.registration_repo = registration_repository
         self.participant_repo = participant_repository
         self.competition_repo = competition_repository
+        self.institution_repo = institution_repository
+        self.document_repo = document_repository
 
     async def execute(self, raw_token: str) -> VerifyEntryQRResult:
-        """Verify entry QR token.
-
-        Args:
-            raw_token: Raw token value scanned from QR code
-
-        Returns:
-            Verification result with participant and competition info
-
-        Raises:
-            ValueError: If token is invalid, expired, or already used
-        """
         if not raw_token:
             raise ValueError("Токен не может быть пустым")
 
@@ -94,10 +94,24 @@ class VerifyEntryQRUseCase:
         if not competition:
             raise ValueError("Олимпиада не найдена")
 
-        # 6. Check competition is in progress (admission allowed)
+        # 6. Get institution name if available
+        institution_name = None
+        if participant.institution_id and self.institution_repo:
+            institution = await self.institution_repo.get_by_id(participant.institution_id)
+            if institution:
+                institution_name = institution.name
+
+        # 7. Check if participant has documents
+        has_documents = False
+        if self.document_repo:
+            docs = await self.document_repo.get_by_participant(participant.id)
+            has_documents = len(docs) > 0
+
+        # 8. Check competition is in progress (admission allowed)
         if not competition.is_in_progress:
             return VerifyEntryQRResult(
                 registration_id=registration.id,
+                participant_id=participant.id,
                 participant_name=participant.full_name,
                 participant_school=participant.school,
                 participant_grade=participant.grade,
@@ -105,10 +119,14 @@ class VerifyEntryQRUseCase:
                 competition_id=competition.id,
                 can_proceed=False,
                 message=f"Олимпиада не в процессе (статус: {competition.status.value})",
+                institution_name=institution_name,
+                dob=participant.dob,
+                has_documents=has_documents,
             )
 
         return VerifyEntryQRResult(
             registration_id=registration.id,
+            participant_id=participant.id,
             participant_name=participant.full_name,
             participant_school=participant.school,
             participant_grade=participant.grade,
@@ -116,4 +134,7 @@ class VerifyEntryQRUseCase:
             competition_id=competition.id,
             can_proceed=True,
             message="Участник подтверждён. Можно выдать бланк.",
+            institution_name=institution_name,
+            dob=participant.dob,
+            has_documents=has_documents,
         )

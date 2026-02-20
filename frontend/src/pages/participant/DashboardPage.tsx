@@ -1,13 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { QRCodeSVG } from 'qrcode.react';
 import api from '../../api/client';
 import type { Competition, Registration, ParticipantProfile } from '../../types';
 import Layout from '../../components/layout/Layout';
 import Button from '../../components/common/Button';
 import Spinner from '../../components/common/Spinner';
 import Input from '../../components/common/Input';
+import InstitutionAutocomplete from '../../components/common/InstitutionAutocomplete';
 import QRCodeDisplay from '../../components/qr/QRCodeDisplay';
 import useAuthStore from '../../store/authStore';
+import logoBlue from '../../assets/images/logo/logo_blue.png';
 
 type TabType = 'profile' | 'registrations' | 'competitions';
 
@@ -27,7 +30,19 @@ const DashboardPage: React.FC = () => {
     full_name: '',
     school: '',
     grade: 0,
+    dob: '',
+    institution_id: null as string | null | undefined,
   });
+  const [printingReg, setPrintingReg] = useState<{ token: string; compName: string } | null>(null);
+  const printRef = useRef<HTMLDivElement>(null);
+
+  const handlePrintBadge = useCallback((token: string, compName: string) => {
+    setPrintingReg({ token, compName });
+    setTimeout(() => {
+      window.print();
+      setPrintingReg(null);
+    }, 300);
+  }, []);
 
   useEffect(() => {
     loadData();
@@ -48,6 +63,8 @@ const DashboardPage: React.FC = () => {
         full_name: profileRes.data.full_name,
         school: profileRes.data.school,
         grade: profileRes.data.grade,
+        dob: profileRes.data.dob || '',
+        institution_id: profileRes.data.institution_id,
       });
     } catch {
       setError('Не удалось загрузить данные.');
@@ -181,10 +198,23 @@ const DashboardPage: React.FC = () => {
                 value={editForm.full_name}
                 onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
               />
+              <div className="form-group">
+                <label className="label">Учебное учреждение</label>
+                <InstitutionAutocomplete
+                  value={editForm.school}
+                  onChange={(val, instId) => setEditForm({
+                    ...editForm,
+                    school: val,
+                    institution_id: instId || editForm.institution_id,
+                  })}
+                  placeholder="Начните вводить название..."
+                />
+              </div>
               <Input
-                label="Школа"
-                value={editForm.school}
-                onChange={(e) => setEditForm({ ...editForm, school: e.target.value })}
+                label="Дата рождения"
+                type="date"
+                value={editForm.dob}
+                onChange={(e) => setEditForm({ ...editForm, dob: e.target.value })}
               />
               <Input
                 label="Класс"
@@ -204,6 +234,8 @@ const DashboardPage: React.FC = () => {
                       full_name: profile.full_name,
                       school: profile.school,
                       grade: profile.grade,
+                      dob: profile.dob || '',
+                      institution_id: profile.institution_id,
                     });
                   }}
                 >
@@ -222,9 +254,15 @@ const DashboardPage: React.FC = () => {
                 <span className="info-value">{profile.full_name}</span>
               </div>
               <div className="info-row">
-                <span className="info-label">Школа:</span>
+                <span className="info-label">Учебное учреждение:</span>
                 <span className="info-value">{profile.school}</span>
               </div>
+              {profile.dob && (
+                <div className="info-row">
+                  <span className="info-label">Дата рождения:</span>
+                  <span className="info-value">{new Date(profile.dob).toLocaleDateString('ru-RU')}</span>
+                </div>
+              )}
               <div className="info-row">
                 <span className="info-label">Класс:</span>
                 <span className="info-value">{profile.grade}</span>
@@ -279,6 +317,13 @@ const DashboardPage: React.FC = () => {
                             ? 'Покажите этот QR-код при допуске'
                             : 'Вы допущены к олимпиаде'}
                         </p>
+                        <Button
+                          variant="secondary"
+                          className="mt-8 btn-sm"
+                          onClick={() => handlePrintBadge(reg.entry_token!, comp?.name || 'Олимпиада')}
+                        >
+                          Распечатать бейдж
+                        </Button>
                       </div>
                     )}
 
@@ -345,6 +390,23 @@ const DashboardPage: React.FC = () => {
                 </div>
               ))
           )}
+        </div>
+      )}
+
+      {/* Print-only badge */}
+      {printingReg && profile && (
+        <div ref={printRef} className="print-badge-wrapper">
+          <div className="print-badge">
+            <img src={logoBlue} alt="OlimpQR" className="print-badge-logo" />
+            <div className="print-badge-title">OlimpQR</div>
+            <div className="print-badge-comp">{printingReg.compName}</div>
+            <div className="print-badge-name">{profile.full_name}</div>
+            <div className="print-badge-school">{profile.school}</div>
+            <div className="print-badge-qr">
+              <QRCodeSVG value={printingReg.token} size={180} />
+            </div>
+            <div className="print-badge-hint">Покажите QR-код для допуска</div>
+          </div>
         </div>
       )}
 
@@ -525,6 +587,79 @@ const DashboardPage: React.FC = () => {
           .reg-header {
             flex-direction: column;
             align-items: start;
+          }
+        }
+
+        /* Print badge - hidden on screen */
+        .print-badge-wrapper {
+          display: none;
+        }
+
+        @media print {
+          /* Hide everything except badge */
+          body > *:not(.print-badge-wrapper) {
+            display: none !important;
+          }
+          .print-badge-wrapper {
+            display: flex !important;
+            justify-content: center;
+            align-items: center;
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background: white;
+            z-index: 99999;
+          }
+          .print-badge {
+            width: 90mm;
+            height: 130mm;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 8mm;
+            box-sizing: border-box;
+            background: white;
+          }
+          .print-badge-logo {
+            width: 20mm;
+            height: 20mm;
+            object-fit: contain;
+            margin-bottom: 3mm;
+          }
+          .print-badge-title {
+            font-size: 16pt;
+            font-weight: 700;
+            margin-bottom: 2mm;
+          }
+          .print-badge-comp {
+            font-size: 9pt;
+            color: #555;
+            margin-bottom: 4mm;
+            text-align: center;
+          }
+          .print-badge-name {
+            font-size: 12pt;
+            font-weight: 700;
+            margin-bottom: 2mm;
+            text-align: center;
+          }
+          .print-badge-school {
+            font-size: 9pt;
+            color: #555;
+            margin-bottom: 4mm;
+            text-align: center;
+          }
+          .print-badge-qr {
+            margin-bottom: 3mm;
+          }
+          .print-badge-hint {
+            font-size: 7pt;
+            color: #888;
           }
         }
       `}</style>

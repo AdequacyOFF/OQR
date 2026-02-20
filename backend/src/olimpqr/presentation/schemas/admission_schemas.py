@@ -1,5 +1,6 @@
 """Admission-related Pydantic schemas."""
 
+import datetime as dt
 from pydantic import BaseModel, Field
 from uuid import UUID
 
@@ -12,13 +13,17 @@ class VerifyEntryQRRequest(BaseModel):
 class VerifyEntryQRResponse(BaseModel):
     """Response after verifying entry QR code."""
     registration_id: UUID
+    participant_id: UUID | None = None
     participant_name: str
     participant_school: str
-    participant_grade: int
+    participant_grade: int | None = None
     competition_name: str
     competition_id: UUID
     can_proceed: bool
     message: str
+    institution_name: str | None = None
+    dob: dt.date | None = None
+    has_documents: bool = False
 
     model_config = {
         "json_schema_extra": {
@@ -30,7 +35,10 @@ class VerifyEntryQRResponse(BaseModel):
                 "competition_name": "Олимпиада по математике",
                 "competition_id": "123e4567-e89b-12d3-a456-426614174001",
                 "can_proceed": True,
-                "message": "Participant verified. Proceed with admission."
+                "message": "Participant verified. Proceed with admission.",
+                "institution_name": "Школа №1",
+                "dob": "2010-05-15",
+                "has_documents": True,
             }]
         }
     }
@@ -47,14 +55,18 @@ class ApproveAdmissionResponse(BaseModel):
     variant_number: int
     pdf_url: str
     sheet_token: str
+    room_name: str | None = None
+    seat_number: int | None = None
 
     model_config = {
         "json_schema_extra": {
             "examples": [{
                 "attempt_id": "123e4567-e89b-12d3-a456-426614174000",
                 "variant_number": 2,
-                "pdf_url": "http://minio:9000/answer-sheets/...",
-                "sheet_token": "abc123..."
+                "pdf_url": "admission/sheets/123e4567.../download",
+                "sheet_token": "abc123...",
+                "room_name": "Ауд. 301",
+                "seat_number": 5,
             }]
         }
     }

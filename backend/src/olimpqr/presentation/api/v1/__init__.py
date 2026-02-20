@@ -9,6 +9,10 @@ from .scans import router as scans_router
 from .admin import router as admin_router
 from .results import router as results_router
 from .profiles import router as profiles_router
+from .institutions import router as institutions_router
+from .rooms import router as rooms_router
+from .invigilator import router as invigilator_router
+from .documents import router as documents_router
 
 api_router = APIRouter()
 
@@ -21,5 +25,9 @@ api_router.include_router(scans_router, prefix="/scans", tags=["Scans"])
 api_router.include_router(admin_router, prefix="/admin", tags=["Admin"])
 api_router.include_router(results_router, prefix="/results", tags=["Results"])
 api_router.include_router(profiles_router, prefix="/profile", tags=["Profile"])
+api_router.include_router(institutions_router, prefix="/institutions", tags=["Institutions"])
+api_router.include_router(rooms_router, prefix="/rooms", tags=["Rooms"])
+api_router.include_router(invigilator_router, prefix="/invigilator", tags=["Invigilator"])
+api_router.include_router(documents_router, prefix="/documents", tags=["Documents"])
 
 __all__ = ["api_router"]

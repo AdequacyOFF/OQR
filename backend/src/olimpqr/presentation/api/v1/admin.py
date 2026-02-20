@@ -3,7 +3,10 @@
 from typing import Annotated, Optional
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from ....infrastructure.database import get_db
 from ....infrastructure.repositories import (
@@ -13,10 +16,15 @@ from ....infrastructure.repositories import (
     ScanRepositoryImpl,
     RegistrationRepositoryImpl,
     ParticipantRepositoryImpl,
+    EntryTokenRepositoryImpl,
 )
 from ....infrastructure.security import hash_password
 from ....domain.entities import User
 from ....domain.value_objects import UserRole
+from ....domain.services import TokenService
+from ....application.use_cases.registration.register_for_competition import (
+    RegisterForCompetitionUseCase,
+)
 from ...schemas.admin_schemas import (
     CreateStaffRequest,
     UpdateUserRequest,
@@ -25,6 +33,10 @@ from ...schemas.admin_schemas import (
     AuditLogEntry,
     AuditLogListResponse,
     StatisticsResponse,
+    AdminRegisterRequest,
+    AdminRegisterResponse,
+    AdminRegistrationItem,
+    AdminRegistrationListResponse,
 )
 from ...dependencies import require_role
 
@@ -79,9 +91,7 @@ async def create_staff_user(
         if not body.full_name or len(body.full_name.strip()) < 2:
             raise HTTPException(status_code=400, detail="ФИО обязательно для участников (минимум 2 символа)")
         if not body.school or len(body.school.strip()) < 2:
-            raise HTTPException(status_code=400, detail="Школа обязательна для участников (минимум 2 символа)")
-        if body.grade is None or not (1 <= body.grade <= 12):
-            raise HTTPException(status_code=400, detail="Класс обязателен для участников (1-12)")
+            raise HTTPException(status_code=400, detail="Учебное учреждение обязательно для участников (минимум 2 символа)")
 
     from uuid import uuid4
 
@@ -104,6 +114,8 @@ async def create_staff_user(
             full_name=body.full_name,
             school=body.school,
             grade=body.grade,
+            institution_id=body.institution_id,
+            dob=body.dob,
         )
         await participant_repo.create(participant)
 
@@ -166,6 +178,40 @@ async def deactivate_user(
 
     user.deactivate()
     await user_repo.update(user)
+
+
+# --- Participants ---
+
+@router.get("/participants")
+async def list_participants(
+    skip: int = 0,
+    limit: int = 1000,
+    current_user: User = Depends(require_role(UserRole.ADMIN)),
+    db: AsyncSession = Depends(get_db),
+):
+    """List all participants (id, full_name, school) for admin registration."""
+    from ....infrastructure.database.models import ParticipantModel
+
+    stmt = (
+        select(ParticipantModel)
+        .order_by(ParticipantModel.full_name)
+        .offset(skip)
+        .limit(limit)
+    )
+    result = await db.execute(stmt)
+    participants = result.scalars().all()
+
+    return {
+        "participants": [
+            {
+                "id": str(p.id),
+                "user_id": str(p.user_id),
+                "full_name": p.full_name,
+                "school": p.school,
+            }
+            for p in participants
+        ]
+    }
 
 
 # --- Audit Log ---
@@ -249,4 +295,171 @@ async def get_statistics(
         total_scans=total_scans,
         total_registrations=total_registrations,
         total_participants=total_participants,
+    )
+
+
+# --- Registration Management ---
+
+@router.post("/registrations", response_model=AdminRegisterResponse, status_code=status.HTTP_201_CREATED)
+async def admin_register_participant(
+    body: AdminRegisterRequest,
+    current_user: User = Depends(require_role(UserRole.ADMIN)),
+    db: AsyncSession = Depends(get_db),
+):
+    """Admin registers a participant for a competition (bypasses status check)."""
+    registration_repo = RegistrationRepositoryImpl(db)
+    competition_repo = CompetitionRepositoryImpl(db)
+    participant_repo = ParticipantRepositoryImpl(db)
+    entry_token_repo = EntryTokenRepositoryImpl(db)
+    token_service = TokenService()
+
+    use_case = RegisterForCompetitionUseCase(
+        registration_repository=registration_repo,
+        competition_repository=competition_repo,
+        participant_repository=participant_repo,
+        entry_token_repository=entry_token_repo,
+        token_service=token_service,
+    )
+
+    try:
+        result = await use_case.execute(
+            participant_id=body.participant_id,
+            competition_id=body.competition_id,
+            skip_status_check=True,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    return AdminRegisterResponse(
+        registration_id=result.registration_id,
+        entry_token=result.entry_token,
+    )
+
+
+@router.get("/registrations/{competition_id}", response_model=AdminRegistrationListResponse)
+async def list_competition_registrations(
+    competition_id: UUID,
+    current_user: User = Depends(require_role(UserRole.ADMIN)),
+    db: AsyncSession = Depends(get_db),
+):
+    """List all registrations for a competition with participant details."""
+    from ....infrastructure.database.models import (
+        RegistrationModel,
+        ParticipantModel,
+        EntryTokenModel,
+        InstitutionModel,
+    )
+
+    stmt = (
+        select(RegistrationModel)
+        .where(RegistrationModel.competition_id == competition_id)
+        .options(
+            selectinload(RegistrationModel.entry_token),
+            selectinload(RegistrationModel.participant).selectinload(ParticipantModel.institution),
+        )
+        .order_by(RegistrationModel.created_at)
+    )
+    result = await db.execute(stmt)
+    registrations = result.scalars().all()
+
+    items = []
+    for reg in registrations:
+        participant = reg.participant
+        institution_name = None
+        if participant and participant.institution:
+            institution_name = participant.institution.name
+
+        entry_token_raw = None
+        if reg.entry_token:
+            entry_token_raw = reg.entry_token.raw_token
+
+        items.append(
+            AdminRegistrationItem(
+                registration_id=reg.id,
+                participant_id=reg.participant_id,
+                participant_name=participant.full_name if participant else "—",
+                participant_school=participant.school if participant else "—",
+                institution_name=institution_name,
+                entry_token=entry_token_raw,
+                status=reg.status.value,
+            )
+        )
+
+    return AdminRegistrationListResponse(items=items, total=len(items))
+
+
+@router.get("/registrations/{competition_id}/badges-pdf")
+async def download_badges_pdf(
+    competition_id: UUID,
+    current_user: User = Depends(require_role(UserRole.ADMIN)),
+    db: AsyncSession = Depends(get_db),
+):
+    """Download a PDF with QR badges for all registrations, grouped by institution."""
+    from ....infrastructure.database.models import (
+        RegistrationModel,
+        CompetitionModel,
+    )
+    from ....infrastructure.pdf.badge_generator import BadgeGenerator, BadgeData
+    from io import BytesIO
+
+    # Get competition name
+    comp_result = await db.execute(
+        select(CompetitionModel).where(CompetitionModel.id == competition_id)
+    )
+    competition = comp_result.scalar_one_or_none()
+    if not competition:
+        raise HTTPException(status_code=404, detail="Олимпиада не найдена")
+
+    # Get registrations
+    from ....infrastructure.database.models import ParticipantModel
+    stmt = (
+        select(RegistrationModel)
+        .where(RegistrationModel.competition_id == competition_id)
+        .options(
+            selectinload(RegistrationModel.entry_token),
+            selectinload(RegistrationModel.participant).selectinload(ParticipantModel.institution),
+        )
+        .order_by(RegistrationModel.created_at)
+    )
+    result = await db.execute(stmt)
+    registrations = result.scalars().all()
+
+    badges: list[BadgeData] = []
+    for reg in registrations:
+        participant = reg.participant
+        if not participant:
+            continue
+
+        entry_token_raw = None
+        if reg.entry_token and reg.entry_token.raw_token:
+            entry_token_raw = reg.entry_token.raw_token
+
+        if not entry_token_raw:
+            continue
+
+        institution_name = ""
+        if participant.institution:
+            institution_name = participant.institution.name
+
+        badges.append(
+            BadgeData(
+                name=participant.full_name,
+                school=participant.school,
+                institution=institution_name,
+                qr_token=entry_token_raw,
+            )
+        )
+
+    # Sort by institution then name
+    badges.sort(key=lambda b: (b.institution or "", b.name))
+
+    generator = BadgeGenerator()
+    pdf_bytes = generator.generate_badges_pdf(competition.name, badges)
+
+    return StreamingResponse(
+        BytesIO(pdf_bytes),
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="badges_{competition_id}.pdf"'
+        },
     )

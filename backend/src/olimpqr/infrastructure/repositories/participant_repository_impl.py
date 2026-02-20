@@ -24,6 +24,8 @@ class ParticipantRepositoryImpl(ParticipantRepository):
             full_name=entity.full_name,
             school=entity.school,
             grade=entity.grade,
+            institution_id=entity.institution_id,
+            dob=entity.dob,
             created_at=entity.created_at,
             updated_at=entity.updated_at
         )
@@ -64,6 +66,8 @@ class ParticipantRepositoryImpl(ParticipantRepository):
         model.full_name = entity.full_name
         model.school = entity.school
         model.grade = entity.grade
+        model.institution_id = entity.institution_id
+        model.dob = entity.dob
         model.updated_at = entity.updated_at
 
         await self.session.flush()
@@ -100,6 +104,8 @@ class ParticipantRepositoryImpl(ParticipantRepository):
             full_name=model.full_name,
             school=model.school,
             grade=model.grade,
+            institution_id=model.institution_id,
+            dob=model.dob,
             created_at=model.created_at,
             updated_at=model.updated_at
         )

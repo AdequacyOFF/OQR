@@ -7,6 +7,25 @@ import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import Spinner from '../../components/common/Spinner';
 
+interface ParticipantEvent {
+  id: string;
+  event_type: string;
+  timestamp: string;
+}
+
+interface AnswerSheetInfo {
+  id: string;
+  kind: string;
+  created_at: string;
+}
+
+const EVENT_LABELS: Record<string, string> = {
+  start_work: 'Начало работы',
+  submit: 'Сдача работы',
+  exit_room: 'Выход из аудитории',
+  enter_room: 'Вход в аудиторию',
+};
+
 const ScanDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [scan, setScan] = useState<ScanItem | null>(null);
@@ -16,6 +35,8 @@ const ScanDetailPage: React.FC = () => {
   const [success, setSuccess] = useState<string | null>(null);
   const [correctedScore, setCorrectedScore] = useState<string>('');
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [events, setEvents] = useState<ParticipantEvent[]>([]);
+  const [answerSheets, setAnswerSheets] = useState<AnswerSheetInfo[]>([]);
 
   useEffect(() => {
     const loadScan = async () => {
@@ -32,6 +53,25 @@ const ScanDetailPage: React.FC = () => {
           setImageUrl(url);
         } catch {
           // Image may not be available yet
+        }
+        // Load invigilator events and answer sheets for this attempt
+        if (data.attempt_id) {
+          try {
+            const eventsResp = await api.get<{ events: ParticipantEvent[] }>(
+              `invigilator/attempt/${data.attempt_id}/events`
+            );
+            setEvents(eventsResp.data.events || []);
+          } catch {
+            // Events endpoint may not be accessible for scanner role
+          }
+          try {
+            const sheetsResp = await api.get<{ sheets: AnswerSheetInfo[] }>(
+              `invigilator/attempt/${data.attempt_id}/sheets`
+            );
+            setAnswerSheets(sheetsResp.data.sheets || []);
+          } catch {
+            // Sheets endpoint may not exist yet
+          }
         }
       } catch {
         setError('Не удалось загрузить скан.');
@@ -164,6 +204,65 @@ const ScanDetailPage: React.FC = () => {
           <pre style={{ whiteSpace: 'pre-wrap', fontSize: 13, background: 'rgba(255,255,255,0.1)', padding: 12, borderRadius: 6 }}>
             {scan.ocr_raw_text}
           </pre>
+        </div>
+      )}
+
+      {/* Answer sheets for this attempt */}
+      {answerSheets.length > 0 && (
+        <div className="card mb-16">
+          <h2 className="mb-16">Бланки ответов ({answerSheets.length})</h2>
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Тип</th>
+                <th>ID</th>
+                <th>Дата создания</th>
+              </tr>
+            </thead>
+            <tbody>
+              {answerSheets.map((sheet) => (
+                <tr key={sheet.id}>
+                  <td>
+                    <span style={{
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      background: sheet.kind === 'primary' ? '#f0fff4' : '#fefcbf',
+                      color: sheet.kind === 'primary' ? '#22543d' : '#744210',
+                    }}>
+                      {sheet.kind === 'primary' ? 'Основной' : 'Дополнительный'}
+                    </span>
+                  </td>
+                  <td style={{ fontSize: 12 }}>{sheet.id.slice(0, 8)}...</td>
+                  <td>{new Date(sheet.created_at).toLocaleString('ru-RU')}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Invigilator events for this attempt */}
+      {events.length > 0 && (
+        <div className="card mb-16">
+          <h2 className="mb-16">События надзирателя</h2>
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Событие</th>
+                <th>Время</th>
+              </tr>
+            </thead>
+            <tbody>
+              {events.map((evt) => (
+                <tr key={evt.id}>
+                  <td>{EVENT_LABELS[evt.event_type] || evt.event_type}</td>
+                  <td>{new Date(evt.timestamp).toLocaleString('ru-RU')}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 

@@ -41,7 +41,8 @@ class RegisterForCompetitionUseCase:
     async def execute(
         self,
         participant_id: UUID,
-        competition_id: UUID
+        competition_id: UUID,
+        skip_status_check: bool = False,
     ) -> RegisterForCompetitionResult:
         """Register participant for competition.
 
@@ -66,7 +67,7 @@ class RegisterForCompetitionUseCase:
             raise ValueError("Олимпиада не найдена")
 
         # Check registration is open
-        if not competition.is_registration_open:
+        if not skip_status_check and not competition.is_registration_open:
             raise ValueError("Регистрация на эту олимпиаду закрыта")
 
         # Check for duplicate registration

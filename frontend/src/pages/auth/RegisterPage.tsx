@@ -1,18 +1,22 @@
-import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import React, { useRef, useState } from 'react';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link, useNavigate } from 'react-router-dom';
 import useAuthStore from '../../store/authStore';
+import api from '../../api/client';
 import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
+import InstitutionAutocomplete from '../../components/common/InstitutionAutocomplete';
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 const registerSchema = z.object({
   email: z.string().email('Введите корректный email'),
-  password: z.string().min(6, 'Пароль должен содержать минимум 6 символов'),
+  password: z.string().min(8, 'Пароль должен содержать минимум 8 символов'),
   full_name: z.string().min(1, 'Введите ФИО'),
-  school: z.string().min(1, 'Введите название школы'),
-  grade: z.coerce.number().min(1, 'Минимум 1').max(12, 'Максимум 12'),
+  school: z.string().min(1, 'Введите название учебного учреждения'),
+  dob: z.string().optional(),
 });
 
 type RegisterForm = z.infer<typeof registerSchema>;
@@ -21,6 +25,7 @@ const roleRedirects: Record<string, string> = {
   participant: '/dashboard',
   admitter: '/admission',
   scanner: '/scans',
+  invigilator: '/invigilator',
   admin: '/admin',
 };
 
@@ -29,27 +34,68 @@ const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [institutionId, setInstitutionId] = useState<string | undefined>(undefined);
+
+  // Document upload state
+  const [documentFile, setDocumentFile] = useState<File | null>(null);
+  const [documentError, setDocumentError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
   });
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setDocumentError(null);
+    if (file && file.size > MAX_FILE_SIZE) {
+      setDocumentError('Размер файла не должен превышать 10 МБ');
+      setDocumentFile(null);
+      return;
+    }
+    setDocumentFile(file);
+  };
+
   const onSubmit = async (data: RegisterForm) => {
     setError(null);
+    setDocumentError(null);
+
+    if (!documentFile) {
+      setDocumentError('Необходимо прикрепить скан документа');
+      return;
+    }
+
     setLoading(true);
     try {
+      // Step 1: Register
       await registerUser({
         email: data.email,
         password: data.password,
         role: 'participant',
         full_name: data.full_name,
         school: data.school,
-        grade: data.grade,
-      });
+        institution_id: institutionId,
+        dob: data.dob || undefined,
+      } as never);
+
+      // Step 2: Upload document using the new JWT
+      try {
+        const formData = new FormData();
+        formData.append('file', documentFile);
+        await api.post('documents', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+      } catch {
+        // Registration succeeded but document upload failed — let user re-upload later
+        console.warn('Document upload failed after registration');
+      }
+
+      // Step 3: Navigate
       const user = useAuthStore.getState().user;
       const redirect = user ? roleRedirects[user.role] || '/dashboard' : '/dashboard';
       navigate(redirect);
@@ -85,25 +131,64 @@ const RegisterPage: React.FC = () => {
           <Input
             label="Пароль"
             type="password"
-            placeholder="Минимум 6 символов"
+            placeholder="Минимум 8 символов"
             error={errors.password?.message}
             {...register('password')}
           />
+          <div className="form-group">
+            <label className="label">Учебное учреждение</label>
+            <Controller
+              name="school"
+              control={control}
+              render={({ field }) => (
+                <InstitutionAutocomplete
+                  value={field.value || ''}
+                  onChange={(val, instId) => {
+                    field.onChange(val);
+                    setInstitutionId(instId);
+                  }}
+                  placeholder="Начните вводить название..."
+                />
+              )}
+            />
+            {errors.school && <span className="error-text">{errors.school.message}</span>}
+          </div>
           <Input
-            label="Школа"
-            placeholder="Название школы"
-            error={errors.school?.message}
-            {...register('school')}
+            label="Дата рождения"
+            type="date"
+            error={errors.dob?.message}
+            {...register('dob')}
           />
-          <Input
-            label="Класс"
-            type="number"
-            placeholder="1-12"
-            min={1}
-            max={12}
-            error={errors.grade?.message}
-            {...register('grade')}
-          />
+
+          {/* Document upload */}
+          <div className="form-group">
+            <label className="label">Скан документа, удостоверяющего личность *</label>
+            <div
+              style={{
+                border: '2px dashed var(--border-color, #ccc)',
+                borderRadius: 8,
+                padding: 16,
+                textAlign: 'center',
+                cursor: 'pointer',
+              }}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,application/pdf"
+                onChange={handleFileChange}
+                style={{ display: 'none' }}
+              />
+              {documentFile ? (
+                <span>{documentFile.name}</span>
+              ) : (
+                <span className="text-muted">Нажмите для выбора файла (до 10 МБ)</span>
+              )}
+            </div>
+            {documentError && <span className="error-text">{documentError}</span>}
+          </div>
+
           <Button type="submit" loading={loading} style={{ width: '100%' }}>
             Зарегистрироваться
           </Button>

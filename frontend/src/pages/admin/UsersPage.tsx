@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import api from '../../api/client';
@@ -9,19 +9,16 @@ import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import Modal from '../../components/common/Modal';
 import Spinner from '../../components/common/Spinner';
+import InstitutionAutocomplete from '../../components/common/InstitutionAutocomplete';
 
 const createUserSchema = z.object({
   email: z.string().email('Введите корректный email'),
   password: z.string().min(8, 'Минимум 8 символов'),
-  role: z.enum(['participant', 'admitter', 'scanner', 'admin']),
+  role: z.enum(['participant', 'admitter', 'scanner', 'invigilator', 'admin']),
   full_name: z.string().optional(),
   school: z.string().optional(),
-  grade: z.preprocess(
-    (val) => (typeof val === 'number' && isNaN(val) ? undefined : val),
-    z.number().optional()
-  ),
+  dob: z.string().optional(),
 }).refine((data) => {
-  // For participants, full_name, school, and grade are required
   if (data.role === 'participant') {
     if (!data.full_name || data.full_name.trim().length < 2) {
       return false;
@@ -29,13 +26,10 @@ const createUserSchema = z.object({
     if (!data.school || data.school.trim().length < 2) {
       return false;
     }
-    if (!data.grade || data.grade < 1 || data.grade > 12) {
-      return false;
-    }
   }
   return true;
 }, {
-  message: 'Для участников необходимо указать ФИО, школу и класс (минимум 2 символа для текста, класс 1-12)',
+  message: 'Для участников необходимо указать ФИО и учебное учреждение',
   path: ['full_name'],
 });
 
@@ -47,12 +41,14 @@ const UsersPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [institutionId, setInstitutionId] = useState<string | undefined>(undefined);
 
   const {
     register,
     handleSubmit,
     reset,
     watch,
+    control,
     formState: { errors },
   } = useForm<CreateUserForm>({
     resolver: zodResolver(createUserSchema),
@@ -93,7 +89,8 @@ const UsersPage: React.FC = () => {
       if (data.role === 'participant') {
         cleanData.full_name = data.full_name;
         cleanData.school = data.school;
-        cleanData.grade = data.grade;
+        cleanData.institution_id = institutionId;
+        cleanData.dob = data.dob || undefined;
       }
 
       console.log('Sending request with cleanData:', cleanData);
@@ -101,6 +98,7 @@ const UsersPage: React.FC = () => {
       console.log('User created successfully:', response.data);
       setModalOpen(false);
       reset();
+      setInstitutionId(undefined);
       await loadUsers();
     } catch (err: unknown) {
       console.error('Error creating user:', err);
@@ -130,6 +128,7 @@ const UsersPage: React.FC = () => {
       participant: 'Участник',
       admitter: 'Допуск',
       scanner: 'Сканер',
+      invigilator: 'Надзиратель',
       admin: 'Администратор',
     };
     return labels[role] || role;
@@ -186,6 +185,7 @@ const UsersPage: React.FC = () => {
         onClose={() => {
           setModalOpen(false);
           reset();
+          setInstitutionId(undefined);
         }}
         title="Создать пользователя"
       >
@@ -211,6 +211,7 @@ const UsersPage: React.FC = () => {
               <option value="participant">Участник</option>
               <option value="admitter">Допуск</option>
               <option value="scanner">Сканер</option>
+              <option value="invigilator">Надзиратель</option>
               <option value="admin">Администратор</option>
             </select>
             {errors.role && <p className="error-text">{errors.role.message}</p>}
@@ -223,16 +224,29 @@ const UsersPage: React.FC = () => {
                 error={errors.full_name?.message}
                 {...register('full_name')}
               />
+              <div className="form-group">
+                <label className="label">Учебное учреждение *</label>
+                <Controller
+                  name="school"
+                  control={control}
+                  render={({ field }) => (
+                    <InstitutionAutocomplete
+                      value={field.value || ''}
+                      onChange={(val, instId) => {
+                        field.onChange(val);
+                        setInstitutionId(instId);
+                      }}
+                      placeholder="Начните вводить название..."
+                    />
+                  )}
+                />
+                {errors.school && <span className="error-text">{errors.school.message}</span>}
+              </div>
               <Input
-                label="Школа *"
-                error={errors.school?.message}
-                {...register('school')}
-              />
-              <Input
-                label="Класс (1-12) *"
-                type="number"
-                error={errors.grade?.message}
-                {...register('grade', { valueAsNumber: true })}
+                label="Дата рождения"
+                type="date"
+                error={errors.dob?.message}
+                {...register('dob')}
               />
             </>
           )}

@@ -15,11 +15,12 @@ class UserRole(str, Enum):
     ADMITTER = "admitter"
     SCANNER = "scanner"
     ADMIN = "admin"
+    INVIGILATOR = "invigilator"
 
     @property
     def is_staff(self) -> bool:
-        """Check if role is staff (admitter, scanner, or admin)."""
-        return self in (UserRole.ADMITTER, UserRole.SCANNER, UserRole.ADMIN)
+        """Check if role is staff (admitter, scanner, invigilator, or admin)."""
+        return self in (UserRole.ADMITTER, UserRole.SCANNER, UserRole.INVIGILATOR, UserRole.ADMIN)
 
     @property
     def is_admin(self) -> bool:

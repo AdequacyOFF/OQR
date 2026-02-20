@@ -13,6 +13,11 @@ from ....infrastructure.repositories import (
     CompetitionRepositoryImpl,
     AttemptRepositoryImpl,
     AuditLogRepositoryImpl,
+    AnswerSheetRepositoryImpl,
+    InstitutionRepositoryImpl,
+    DocumentRepositoryImpl,
+    RoomRepositoryImpl,
+    SeatAssignmentRepositoryImpl,
 )
 from ....infrastructure.storage import MinIOStorage
 from ....infrastructure.pdf import SheetGenerator
@@ -53,11 +58,14 @@ async def verify_entry_qr(
             registration_repository=RegistrationRepositoryImpl(db),
             participant_repository=ParticipantRepositoryImpl(db),
             competition_repository=CompetitionRepositoryImpl(db),
+            institution_repository=InstitutionRepositoryImpl(db),
+            document_repository=DocumentRepositoryImpl(db),
         )
         result = await use_case.execute(request_body.token)
 
         return VerifyEntryQRResponse(
             registration_id=result.registration_id,
+            participant_id=result.participant_id,
             participant_name=result.participant_name,
             participant_school=result.participant_school,
             participant_grade=result.participant_grade,
@@ -65,6 +73,9 @@ async def verify_entry_qr(
             competition_id=result.competition_id,
             can_proceed=result.can_proceed,
             message=result.message,
+            institution_name=result.institution_name,
+            dob=result.dob,
+            has_documents=result.has_documents,
         )
     except ValueError as e:
         raise HTTPException(
@@ -94,8 +105,12 @@ async def approve_admission(
             competition_repository=CompetitionRepositoryImpl(db),
             attempt_repository=AttemptRepositoryImpl(db),
             audit_log_repository=AuditLogRepositoryImpl(db),
+            answer_sheet_repository=AnswerSheetRepositoryImpl(db),
             storage=MinIOStorage(),
             sheet_generator=SheetGenerator(),
+            room_repository=RoomRepositoryImpl(db),
+            seat_assignment_repository=SeatAssignmentRepositoryImpl(db),
+            participant_repository=ParticipantRepositoryImpl(db),
         )
         result = await use_case.execute(
             registration_id=registration_id,
@@ -109,6 +124,8 @@ async def approve_admission(
             variant_number=result.variant_number,
             pdf_url=result.pdf_url,
             sheet_token=result.sheet_token,
+            room_name=result.room_name,
+            seat_number=result.seat_number,
         )
     except ValueError as e:
         raise HTTPException(
@@ -120,16 +137,11 @@ async def approve_admission(
 @router.get("/sheets/{attempt_id}/download")
 async def download_answer_sheet(
     attempt_id: UUID,
-    current_user: Annotated[User, Depends(require_role(UserRole.ADMITTER, UserRole.ADMIN))],
+    current_user: Annotated[User, Depends(require_role(UserRole.ADMITTER, UserRole.ADMIN, UserRole.INVIGILATOR))],
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    """Download answer sheet PDF by proxying through backend.
-
-    This endpoint retrieves the PDF from MinIO and streams it to the client,
-    avoiding presigned URL signature issues.
-    """
+    """Download answer sheet PDF by proxying through backend."""
     try:
-        # Get attempt to find PDF path
         attempt_repo = AttemptRepositoryImpl(db)
         attempt = await attempt_repo.get_by_id(attempt_id)
 
@@ -145,14 +157,12 @@ async def download_answer_sheet(
                 detail="PDF файл не найден для этой попытки",
             )
 
-        # Download from MinIO
         storage = MinIOStorage()
         pdf_bytes = storage.download_file(
             bucket=settings.minio_bucket_sheets,
             object_name=attempt.pdf_file_path,
         )
 
-        # Return as streaming response
         return Response(
             content=pdf_bytes,
             media_type="application/pdf",

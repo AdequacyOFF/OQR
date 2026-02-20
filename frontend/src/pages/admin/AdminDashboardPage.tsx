@@ -55,6 +55,18 @@ const AdminDashboardPage: React.FC = () => {
             <p className="text-muted mt-16">Просмотр активности и изменений в системе</p>
           </div>
         </Link>
+        <Link to="/admin/institutions" style={{ textDecoration: 'none' }}>
+          <div className="card text-center">
+            <h2>Учреждения</h2>
+            <p className="text-muted mt-16">Справочник учебных учреждений</p>
+          </div>
+        </Link>
+        <Link to="/admin/rooms" style={{ textDecoration: 'none' }}>
+          <div className="card text-center">
+            <h2>Аудитории</h2>
+            <p className="text-muted mt-16">Управление аудиториями и рассадкой</p>
+          </div>
+        </Link>
       </div>
 
       <div className="card mt-16">

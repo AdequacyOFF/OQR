@@ -38,9 +38,9 @@ class RegisterUserUseCase:
 
         # Validate participant-specific fields
         if dto.role == UserRole.PARTICIPANT:
-            if not dto.full_name or not dto.school or dto.grade is None:
-                raise ValueError("Для регистрации участника требуется ФИО, школа и класс")
-            if not (1 <= dto.grade <= 12):
+            if not dto.full_name or not dto.school:
+                raise ValueError("Для регистрации участника требуется ФИО и учебное учреждение")
+            if dto.grade is not None and not (1 <= dto.grade <= 12):
                 raise ValueError("Класс должен быть от 1 до 12")
 
         # Hash password
@@ -65,7 +65,9 @@ class RegisterUserUseCase:
                 user_id=user.id,
                 full_name=dto.full_name,
                 school=dto.school,
-                grade=dto.grade
+                grade=dto.grade,
+                institution_id=dto.institution_id,
+                dob=dto.dob,
             )
             await self.participant_repository.create(participant)
 

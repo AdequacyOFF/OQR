@@ -103,6 +103,7 @@ const ScansPage: React.FC = () => {
           <thead>
             <tr>
               <th>ID</th>
+              <th>Попытка</th>
               <th>Балл OCR</th>
               <th>Точность</th>
               <th>Проверен</th>
@@ -113,6 +114,22 @@ const ScansPage: React.FC = () => {
             {scans.map((scan) => (
               <tr key={scan.id} onClick={() => navigate(`/scans/${scan.id}`)}>
                 <td style={{ fontSize: 12 }}>{scan.id.slice(0, 8)}...</td>
+                <td style={{ fontSize: 12 }}>
+                  {scan.attempt_id ? scan.attempt_id.slice(0, 8) + '...' : '-'}
+                  {scan.answer_sheet_id && (
+                    <span style={{
+                      marginLeft: 4,
+                      padding: '1px 6px',
+                      borderRadius: '3px',
+                      fontSize: '10px',
+                      fontWeight: 600,
+                      background: '#fefcbf',
+                      color: '#744210',
+                    }}>
+                      бланк
+                    </span>
+                  )}
+                </td>
                 <td>{scan.ocr_score !== null ? scan.ocr_score : '-'}</td>
                 <td>
                   {scan.ocr_confidence !== null

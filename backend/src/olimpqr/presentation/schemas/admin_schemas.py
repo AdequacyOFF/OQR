@@ -1,5 +1,6 @@
 """Admin-related Pydantic schemas."""
 
+import datetime as dt
 from pydantic import BaseModel, EmailStr, Field
 from uuid import UUID
 from datetime import datetime
@@ -9,13 +10,15 @@ from ...domain.value_objects import UserRole
 
 
 class CreateStaffRequest(BaseModel):
-    """Create a staff user (admitter / scanner / admin / participant)."""
+    """Create a staff user (admitter / scanner / invigilator / admin / participant)."""
     email: EmailStr
     password: str = Field(..., min_length=8)
     role: UserRole
     full_name: Optional[str] = None
     school: Optional[str] = None
     grade: Optional[int] = Field(None, ge=1, le=12)
+    institution_id: Optional[UUID] = None
+    dob: Optional[dt.date] = None
 
 
 class UpdateUserRequest(BaseModel):
@@ -66,3 +69,32 @@ class StatisticsResponse(BaseModel):
     total_scans: int
     total_registrations: int
     total_participants: int
+
+
+class AdminRegisterRequest(BaseModel):
+    """Admin registers a participant for a competition."""
+    participant_id: UUID
+    competition_id: UUID
+
+
+class AdminRegisterResponse(BaseModel):
+    """Response after admin registration."""
+    registration_id: UUID
+    entry_token: str
+
+
+class AdminRegistrationItem(BaseModel):
+    """Single registration item for admin list."""
+    registration_id: UUID
+    participant_id: UUID
+    participant_name: str
+    participant_school: str
+    institution_name: Optional[str] = None
+    entry_token: Optional[str] = None
+    status: str
+
+
+class AdminRegistrationListResponse(BaseModel):
+    """Paginated list of registrations for a competition."""
+    items: list[AdminRegistrationItem]
+    total: int

@@ -24,6 +24,11 @@ import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
 import UsersPage from '../pages/admin/UsersPage';
 import AuditLogPage from '../pages/admin/AuditLogPage';
 import CompetitionsAdminPage from '../pages/admin/CompetitionsAdminPage';
+import InstitutionsPage from '../pages/admin/InstitutionsPage';
+import RoomsPage from '../pages/admin/RoomsPage';
+
+// Invigilator pages
+import InvigilatorPage from '../pages/invigilator/InvigilatorPage';
 
 // Public pages
 import ResultsPage from '../pages/public/ResultsPage';
@@ -109,6 +114,16 @@ const AppRouter: React.FC = () => {
           }
         />
 
+        {/* Invigilator routes */}
+        <Route
+          path="/invigilator"
+          element={
+            <ProtectedRoute allowedRoles={['invigilator']}>
+              <InvigilatorPage />
+            </ProtectedRoute>
+          }
+        />
+
         {/* Scanner routes */}
         <Route
           path="/scans"
@@ -157,6 +172,22 @@ const AppRouter: React.FC = () => {
           element={
             <ProtectedRoute allowedRoles={['admin']}>
               <CompetitionsAdminPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/institutions"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <InstitutionsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/rooms"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <RoomsPage />
             </ProtectedRoute>
           }
         />

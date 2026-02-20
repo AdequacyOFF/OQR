@@ -28,12 +28,15 @@ const Header: React.FC = () => {
         return <Link to="/admission">Допуск</Link>;
       case 'scanner':
         return <Link to="/scans">Сканы</Link>;
+      case 'invigilator':
+        return <Link to="/invigilator">Надзор</Link>;
       case 'admin':
         return (
           <>
             <Link to="/admin">Главная</Link>
             <Link to="/admin/competitions">Олимпиады</Link>
             <Link to="/admin/users">Пользователи</Link>
+            <Link to="/admin/institutions">Учреждения</Link>
             <Link to="/admin/audit-log">Журнал</Link>
           </>
         );

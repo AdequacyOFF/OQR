@@ -1,4 +1,4 @@
-export type UserRole = 'participant' | 'admitter' | 'scanner' | 'admin';
+export type UserRole = 'participant' | 'admitter' | 'scanner' | 'admin' | 'invigilator';
 
 export interface AuthResponse {
   access_token: string;
@@ -20,7 +20,9 @@ export interface ParticipantProfile {
   user_id: string;
   full_name: string;
   school: string;
-  grade: number;
+  grade: number | null;
+  institution_id: string | null;
+  dob: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -53,6 +55,7 @@ export interface Registration {
 export interface ScanItem {
   id: string;
   attempt_id: string | null;
+  answer_sheet_id: string | null;
   file_path: string;
   ocr_score: number | null;
   ocr_confidence: number | null;
@@ -67,7 +70,7 @@ export interface ResultEntry {
   rank: number;
   participant_name: string;
   school: string;
-  grade: number;
+  grade: number | null;
   score: number;
   max_score: number;
 }
@@ -81,4 +84,60 @@ export interface AuditLogEntry {
   ip_address: string | null;
   details: Record<string, unknown>;
   timestamp: string;
+}
+
+export interface Institution {
+  id: string;
+  name: string;
+  short_name: string | null;
+  city: string | null;
+}
+
+export interface Room {
+  id: string;
+  competition_id: string;
+  name: string;
+  capacity: number;
+}
+
+export interface SeatAssignment {
+  id: string;
+  registration_id: string;
+  room_id: string;
+  seat_number: number;
+  variant_number: number;
+}
+
+export interface Document {
+  id: string;
+  file_path: string;
+  file_type: string;
+  created_at: string;
+}
+
+export interface ParticipantEvent {
+  id: string;
+  attempt_id: string;
+  event_type: string;
+  timestamp: string;
+  recorded_by: string;
+}
+
+export interface AnswerSheet {
+  id: string;
+  attempt_id: string;
+  sheet_token_hash: string;
+  kind: 'primary' | 'extra';
+  pdf_file_path: string | null;
+  created_at: string;
+}
+
+export interface AdminRegistrationItem {
+  registration_id: string;
+  participant_id: string;
+  participant_name: string;
+  participant_school: string;
+  institution_name: string | null;
+  entry_token: string | null;
+  status: string;
 }

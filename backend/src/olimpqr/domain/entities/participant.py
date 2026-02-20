@@ -1,5 +1,6 @@
 """Participant entity."""
 
+import datetime as dt
 from dataclasses import dataclass, field
 from datetime import datetime
 from uuid import UUID, uuid4
@@ -15,14 +16,18 @@ class Participant:
         full_name: Participant's full name (shown in results)
         school: School name
         grade: School grade (e.g., 9, 10, 11)
+        institution_id: Reference to Institution (nullable)
+        dob: Date of birth (nullable)
         created_at: When participant profile was created
         updated_at: When participant profile was last updated
     """
     user_id: UUID
     full_name: str
     school: str
-    grade: int
+    grade: int | None = None
     id: UUID = field(default_factory=uuid4)
+    institution_id: UUID | None = None
+    dob: dt.date | None = None
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)
 
@@ -31,7 +36,7 @@ class Participant:
             raise ValueError("ФИО должно быть не менее 2 символов")
         if not self.school or len(self.school.strip()) < 2:
             raise ValueError("Название школы должно быть не менее 2 символов")
-        if not (1 <= self.grade <= 12):
+        if self.grade is not None and not (1 <= self.grade <= 12):
             raise ValueError("Класс должен быть от 1 до 12")
 
     def update_profile(self, full_name: str | None = None, school: str | None = None, grade: int | None = None):

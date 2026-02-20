@@ -243,7 +243,7 @@ class TestComprehensiveWorkflow:
         sheet_token = approve_data["sheet_token"]
 
         assert 1 <= variant_number <= 4
-        assert approve_data["pdf_url"] == "http://minio.test/sheets/participant_123.pdf"
+        assert f"admission/sheets/{attempt_id}/download" in approve_data["pdf_url"]
         assert sheet_token is not None
         assert len(sheet_token) > 20
 

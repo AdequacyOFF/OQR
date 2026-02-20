@@ -25,6 +25,7 @@ class Scan:
     file_path: str
     uploaded_by: UUID
     id: UUID = field(default_factory=uuid4)
+    answer_sheet_id: UUID | None = None
     ocr_score: int | None = None
     ocr_confidence: float | None = None
     ocr_raw_text: str | None = None

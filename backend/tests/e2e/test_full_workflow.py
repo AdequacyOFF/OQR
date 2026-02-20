@@ -157,7 +157,8 @@ class TestFullCompetitionWorkflow:
         approve_data = approve_resp.json()
         attempt_id = approve_data["attempt_id"]
         assert approve_data["variant_number"] >= 1
-        assert approve_data["pdf_url"] == "http://mock-minio/sheets/test.pdf"
+        assert "admission/sheets/" in approve_data["pdf_url"]
+        assert "/download" in approve_data["pdf_url"]
         assert approve_data["sheet_token"] is not None
 
         # ── Step 9: Apply score to attempt ──

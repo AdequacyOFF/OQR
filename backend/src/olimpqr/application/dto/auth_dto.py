@@ -1,5 +1,6 @@
 """Auth-related DTOs."""
 
+import datetime as dt
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -15,6 +16,8 @@ class RegisterUserDTO:
     full_name: str | None = None  # For participants
     school: str | None = None  # For participants
     grade: int | None = None  # For participants
+    institution_id: UUID | None = None
+    dob: dt.date | None = None
 
 
 @dataclass

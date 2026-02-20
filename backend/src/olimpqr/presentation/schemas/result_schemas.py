@@ -10,7 +10,7 @@ class ResultEntry(BaseModel):
     rank: int
     participant_name: str
     school: str
-    grade: int
+    grade: int | None = None
     score: int
     max_score: int
 

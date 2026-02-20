@@ -40,6 +40,12 @@ from olimpqr.infrastructure.database.models import (  # noqa: F401
     AttemptModel,
     ScanModel,
     AuditLogModel,
+    InstitutionModel,
+    RoomModel,
+    SeatAssignmentModel,
+    DocumentModel,
+    ParticipantEventModel,
+    AnswerSheetModel,
 )
 from olimpqr.infrastructure.security import create_access_token
 from olimpqr.domain.value_objects import UserRole
@@ -158,3 +164,38 @@ async def participant_user(db_session: AsyncSession):
 
     headers = make_auth_header(user_id=user_id, email="participant@test.com", role=UserRole.PARTICIPANT)
     return user, participant, headers
+
+
+@pytest_asyncio.fixture
+async def invigilator_user(db_session: AsyncSession):
+    """Create an invigilator user and return (user_model, auth_headers)."""
+    from olimpqr.infrastructure.security import hash_password
+
+    user_id = uuid4()
+    user = UserModel(
+        id=user_id,
+        email="invigilator@test.com",
+        password_hash=hash_password("invigilpass123"),
+        role=UserRole.INVIGILATOR,
+        is_active=True,
+    )
+    db_session.add(user)
+    await db_session.commit()
+
+    headers = make_auth_header(user_id=user_id, email="invigilator@test.com", role=UserRole.INVIGILATOR)
+    return user, headers
+
+
+@pytest_asyncio.fixture
+async def institution(db_session: AsyncSession):
+    """Create a test institution."""
+    inst_id = uuid4()
+    inst = InstitutionModel(
+        id=inst_id,
+        name="Test Institution",
+        short_name="TI",
+        city="Test City",
+    )
+    db_session.add(inst)
+    await db_session.commit()
+    return inst

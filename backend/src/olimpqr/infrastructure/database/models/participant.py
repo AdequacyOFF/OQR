@@ -1,10 +1,11 @@
 """Participant model."""
 
 import uuid
+import datetime as dt
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import ForeignKey, Integer, String
+from sqlalchemy import Date, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..base import Base
@@ -12,6 +13,7 @@ from ..base import Base
 if TYPE_CHECKING:
     from .registration import RegistrationModel
     from .user import UserModel
+    from .institution import InstitutionModel
 
 
 class ParticipantModel(Base):
@@ -39,10 +41,19 @@ class ParticipantModel(Base):
         String(255),
         nullable=False
     )
-    grade: Mapped[int] = mapped_column(
+    grade: Mapped[Optional[int]] = mapped_column(
         Integer,
-        nullable=False,
+        nullable=True,
         index=True
+    )
+    institution_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        ForeignKey("institutions.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True
+    )
+    dob: Mapped[Optional[dt.date]] = mapped_column(
+        Date,
+        nullable=True
     )
     created_at: Mapped[datetime] = mapped_column(
         nullable=False,
@@ -58,6 +69,11 @@ class ParticipantModel(Base):
     user: Mapped["UserModel"] = relationship(
         "UserModel",
         back_populates="participant",
+        lazy="selectin"
+    )
+    institution: Mapped[Optional["InstitutionModel"]] = relationship(
+        "InstitutionModel",
+        back_populates="participants",
         lazy="selectin"
     )
     registrations: Mapped[list["RegistrationModel"]] = relationship(

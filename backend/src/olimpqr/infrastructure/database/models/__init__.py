@@ -8,6 +8,12 @@ from .entry_token import EntryTokenModel
 from .attempt import AttemptModel
 from .scan import ScanModel
 from .audit_log import AuditLogModel
+from .institution import InstitutionModel
+from .room import RoomModel
+from .seat_assignment import SeatAssignmentModel
+from .document import DocumentModel
+from .participant_event import ParticipantEventModel
+from .answer_sheet import AnswerSheetModel
 
 __all__ = [
     "UserModel",
@@ -18,4 +24,10 @@ __all__ = [
     "AttemptModel",
     "ScanModel",
     "AuditLogModel",
+    "InstitutionModel",
+    "RoomModel",
+    "SeatAssignmentModel",
+    "DocumentModel",
+    "ParticipantEventModel",
+    "AnswerSheetModel",
 ]

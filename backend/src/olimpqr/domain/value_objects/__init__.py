@@ -6,6 +6,8 @@ from .user_role import UserRole
 from .competition_status import CompetitionStatus
 from .registration_status import RegistrationStatus
 from .attempt_status import AttemptStatus
+from .event_type import EventType
+from .sheet_kind import SheetKind
 
 __all__ = [
     "Token",
@@ -15,4 +17,6 @@ __all__ = [
     "CompetitionStatus",
     "RegistrationStatus",
     "AttemptStatus",
+    "EventType",
+    "SheetKind",
 ]

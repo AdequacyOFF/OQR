@@ -1,5 +1,6 @@
 """Profile-related Pydantic schemas."""
 
+from typing import Optional
 from pydantic import BaseModel, Field
 from uuid import UUID
 from datetime import datetime
@@ -11,7 +12,7 @@ class ParticipantProfileResponse(BaseModel):
     user_id: UUID
     full_name: str
     school: str
-    grade: int
+    grade: Optional[int] = None
     created_at: datetime
     updated_at: datetime
 
@@ -34,7 +35,7 @@ class UpdateProfileRequest(BaseModel):
     """Request to update participant profile."""
     full_name: str = Field(min_length=2, description="ФИО (минимум 2 символа)")
     school: str = Field(min_length=2, description="Название школы (минимум 2 символа)")
-    grade: int = Field(ge=1, le=12, description="Класс (1-12)")
+    grade: Optional[int] = Field(None, ge=1, le=12, description="Класс (1-12)")
 
     model_config = {
         "json_schema_extra": {

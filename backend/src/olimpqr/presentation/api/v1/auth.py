@@ -55,7 +55,9 @@ async def register(
             role=UserRole.PARTICIPANT,
             full_name=body.full_name,
             school=body.school,
-            grade=body.grade
+            grade=body.grade,
+            institution_id=body.institution_id,
+            dob=body.dob,
         )
 
         # Execute use case
